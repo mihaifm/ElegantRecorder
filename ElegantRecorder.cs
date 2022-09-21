@@ -22,21 +22,31 @@ namespace UIAuto
 
         private const int WH_MOUSE_LL = 14;
         private const int WH_KEYBOARD_LL = 13;
-        private const int MOUSEEVENTF_LEFTDOWN = 0x02;
-        private const int MOUSEEVENTF_LEFTUP = 0x04;
-        private const int MOUSEEVENTF_RIGHTDOWN = 0x08;
-        private const int MOUSEEVENTF_RIGHTUP = 0x10;
+
         private const int WM_KEYDOWN = 0x0100;
         private const int WM_SYSKEYDOWN = 0x104;
         private const int WM_KEYUP = 0x0101;
         private const int WM_SYSKEYUP = 0x105;
+        private const int WM_LBUTTONDOWN = 0x0201;
+        private const int WM_LBUTTONUP = 0x0202;
+        private const int WM_MOUSEMOVE = 0x0200;
+        private const int WM_MOUSEWHEEL = 0x020A;
+        private const int WM_RBUTTONDOWN = 0x0204;
+        private const int WM_RBUTTONUP = 0x0205;
+
+        private const int MOUSEEVENTF_MOVE = 0x0001;
+        private const int MOUSEEVENTF_ABSOLUTE = 0x8000;
+        private const int MOUSEEVENTF_LEFTDOWN = 0x0002;
+        private const int MOUSEEVENTF_LEFTUP = 0x0004;
+        private const int MOUSEEVENTF_RIGHTDOWN = 0x08;
+        private const int MOUSEEVENTF_RIGHTUP = 0x10;
         private const int KEYEVENTF_KEYUP = 0x0002;
 
         private string scriptName;
         private string exeName;
         private string status;
         private Stopwatch stopwatch = new Stopwatch();
-        private struct UIAction
+        private class UIAction
         {
             [JsonPropertyName("event")]
             public string EventType { get; set; }
@@ -68,16 +78,6 @@ namespace UIAuto
 
         List<UIAction> uiSteps = new List<UIAction>();
 
-        private enum MouseMessages
-        {
-            WM_LBUTTONDOWN = 0x0201,
-            WM_LBUTTONUP = 0x0202,
-            WM_MOUSEMOVE = 0x0200,
-            WM_MOUSEWHEEL = 0x020A,
-            WM_RBUTTONDOWN = 0x0204,
-            WM_RBUTTONUP = 0x0205
-        }
-
         [StructLayout(LayoutKind.Sequential)]
         private struct POINT
         {
@@ -95,7 +95,8 @@ namespace UIAuto
             public IntPtr dwExtraInfo;
         }
 
-        MouseHookStruct mouseHookStruct;
+        private MouseHookStruct currentMouseHookStruct;
+        private MouseHookStruct prevMouseHookStruct;
 
         [StructLayout(LayoutKind.Sequential)]
         private struct KeyboardHookStruct
@@ -117,8 +118,7 @@ namespace UIAuto
         private static extern bool UnhookWindowsHookEx(IntPtr hhk);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode,
-            IntPtr wParam, IntPtr lParam);
+        private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string lpModuleName);
@@ -132,6 +132,8 @@ namespace UIAuto
         public ElegantRecorder()
         {
             InitializeComponent();
+
+            labelStatus.Text = "";
         }
 
         public void InstallHooks()
@@ -155,11 +157,17 @@ namespace UIAuto
 
         private IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            if (nCode >= 0 && MouseMessages.WM_LBUTTONDOWN == (MouseMessages)wParam)
-            {
-                mouseHookStruct = (MouseHookStruct)Marshal.PtrToStructure(lParam, typeof(MouseHookStruct));
+            currentMouseHookStruct = (MouseHookStruct)Marshal.PtrToStructure(lParam, typeof(MouseHookStruct));
 
-                RecordClick();
+            if (nCode >= 0)
+            {
+                if (wParam.ToInt32() == WM_LBUTTONDOWN || wParam.ToInt32() == WM_LBUTTONUP ||
+                    wParam.ToInt32() == WM_RBUTTONDOWN || wParam.ToInt32() == WM_RBUTTONUP)
+                {
+                    RecordMouse(wParam.ToInt32());
+
+                    prevMouseHookStruct = currentMouseHookStruct;
+                }
             }
 
             return CallNextHookEx(mouseHookID, nCode, wParam, lParam);
@@ -373,17 +381,36 @@ namespace UIAuto
             stopwatch.Start();
         }
 
-        private /*async*/ void RecordClick()
+        private /*async*/ void RecordMouse(int wparam)
         {
-            //await System.Threading.Tasks.Task.Run(() => RecordClickWorker());
-            RecordClickWorker();
+            //await System.Threading.Tasks.Task.Run(() => RecordMouseWorker());
+            RecordMouseWorker(wparam);
 
             labelStatus.Text = status;
         }
 
-        private void RecordClickWorker()
+        private void RecordMouseWorker(int wparam)
         {
-            var point = new Point(mouseHookStruct.pt.x, mouseHookStruct.pt.y);
+            var point = new Point(currentMouseHookStruct.pt.x, currentMouseHookStruct.pt.y);
+
+            //merge the BUTTONUP and BUTTONDOWN events if coordinates are the same
+            if (currentMouseHookStruct.pt.x == prevMouseHookStruct.pt.x &&
+                currentMouseHookStruct.pt.y == prevMouseHookStruct.pt.y &&
+                uiSteps.Count > 0 &&
+                uiSteps[uiSteps.Count - 1].EventType == "click")
+            {
+                if (wparam == WM_LBUTTONUP)
+                {
+                    uiSteps[uiSteps.Count - 1].Flags |= MOUSEEVENTF_LEFTUP;
+                    return;
+                }
+
+                if (wparam == WM_RBUTTONUP)
+                {
+                    uiSteps[uiSteps.Count - 1].Flags |= MOUSEEVENTF_RIGHTUP;
+                    return;
+                }
+            }
 
             var uiAction = new UIAction();
 
@@ -432,6 +459,17 @@ namespace UIAuto
                 uiAction.OffsetY = (int)(point.Y - boundingRect.Y);
                 uiAction.Level = level;
                 uiAction.elapsed = stopwatch.Elapsed.TotalMilliseconds;
+                uiAction.ExtraInfo = (int)currentMouseHookStruct.dwExtraInfo;
+                uiAction.Flags = (int)currentMouseHookStruct.flags;
+
+                if (wparam == WM_LBUTTONDOWN)
+                    uiAction.Flags |= MOUSEEVENTF_LEFTDOWN;
+                if (wparam == WM_LBUTTONUP)
+                    uiAction.Flags |= MOUSEEVENTF_LEFTUP;
+                if (wparam == WM_RBUTTONDOWN)
+                    uiAction.Flags |= MOUSEEVENTF_RIGHTDOWN;
+                if (wparam == WM_RBUTTONUP)
+                    uiAction.Flags |= MOUSEEVENTF_RIGHTUP;
 
                 uiSteps.Add(uiAction);
 
@@ -540,6 +578,9 @@ namespace UIAuto
         {
             labelStatus.Text = "";
 
+            int oldx = 0;
+            int oldy = 0;
+
             UIAction[] steps = JsonSerializer.Deserialize<UIAction[]>(File.ReadAllText(scriptName));
 
             foreach (var action in steps)
@@ -579,13 +620,32 @@ namespace UIAuto
                     }
 
                     Cursor.Position = new System.Drawing.Point((int)x, (int)y);
-                    mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, (uint)x, (uint)y, 0, 0);
+                    
+                    if (action.Flags == MOUSEEVENTF_LEFTUP)
+                    {
+                        mouse_event(MOUSEEVENTF_MOVE, (uint)(((int) x) - oldx), (uint)(((int)y) - oldy), 0, (uint)action.ExtraInfo);
+                        mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, (uint)action.ExtraInfo);
+                    }
+                    else if (action.Flags == MOUSEEVENTF_RIGHTUP)
+                    {
+                        mouse_event(MOUSEEVENTF_MOVE, (uint)(((int)x) - oldx), (uint)(((int)y) - oldy), 0, (uint)action.ExtraInfo);
+                        mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, (uint)action.ExtraInfo);
+                    }
+                    else
+                    {
+                        mouse_event((uint) action.Flags, 0, 0, 0, (uint)action.ExtraInfo);
+                    }
+
+                    oldx = (int)x;
+                    oldy = (int)y;
                 }
                 else if (action.EventType == "keypress")
                 {
                     keybd_event((uint)action.VKeyCode, (uint)action.ScanCode, (uint)action.Flags, (uint)action.ExtraInfo);
                 }
             }
+
+            labelStatus.Text = "Replay finished";
         }
 
         private void textBoxScriptName_TextChanged(object sender, EventArgs e)

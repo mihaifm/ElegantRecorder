@@ -135,8 +135,9 @@ namespace UIAuto
             this.buttonStop.UseVisualStyleBackColor = true;
             this.buttonStop.Click += new System.EventHandler(this.buttonStop_Click);
             // 
-            // MainUI
+            // ElegantRecorder
             // 
+            this.BackColor = System.Drawing.SystemColors.Control;
             this.ClientSize = new System.Drawing.Size(484, 169);
             this.Controls.Add(this.buttonStop);
             this.Controls.Add(this.buttonBrowseExe);
@@ -148,7 +149,8 @@ namespace UIAuto
             this.Controls.Add(this.buttonBrowseScript);
             this.Controls.Add(this.textBoxScriptName);
             this.Controls.Add(this.labelStatus);
-            this.Name = "MainUI";
+            this.Name = "ElegantRecorder";
+            this.Text = "Elegant Recorder";
             this.ResumeLayout(false);
             this.PerformLayout();
 
