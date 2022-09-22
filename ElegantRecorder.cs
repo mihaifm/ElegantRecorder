@@ -29,7 +29,6 @@ namespace UIAuto
         private const int WM_SYSKEYUP = 0x105;
         private const int WM_LBUTTONDOWN = 0x0201;
         private const int WM_LBUTTONUP = 0x0202;
-        private const int WM_MOUSEMOVE = 0x0200;
         private const int WM_MOUSEWHEEL = 0x020A;
         private const int WM_RBUTTONDOWN = 0x0204;
         private const int WM_RBUTTONUP = 0x0205;
@@ -64,6 +63,8 @@ namespace UIAuto
             public int? OffsetY { get; set; }
             [JsonPropertyName("lvl")]
             public int? Level { get; set; }
+            [JsonPropertyName("idx")]
+            public int? ChildIndex { get; set; }
             [JsonPropertyName("vkcode")]
             public int? VKeyCode { get; set; }
             [JsonPropertyName("scancode")]
@@ -124,7 +125,7 @@ namespace UIAuto
         private static extern IntPtr GetModuleHandle(string lpModuleName);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-        public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
+        public static extern void mouse_event(uint dwFlags, int dx, int dy, int dwData, uint dwExtraInfo);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
         public static extern void keybd_event(uint bVk, uint bScan, uint dwFlags, uint dwExtraInfo);
@@ -189,6 +190,22 @@ namespace UIAuto
             return CallNextHookEx(keyboardHookID, nCode, wParam, lParam);
         }
 
+        private int GetChildIndex(AutomationElement element)
+        {
+            TreeWalker walker = TreeWalker.ControlViewWalker;
+            int index = 0;
+
+            var node = walker.GetNextSibling(element);
+
+            while (node != null)
+            {
+                node = walker.GetNextSibling(node);
+                index++;
+            }
+
+            return index;
+        }
+
         private AutomationElement GetTopLevelWindow(AutomationElement element, out int level)
         {
             TreeWalker walker = TreeWalker.ControlViewWalker;
@@ -241,7 +258,7 @@ namespace UIAuto
             return null;
         }
 
-        private AutomationElement FindElementInWindow(string controlName, string automationId, int? controlType, AutomationElement window, int? level)
+        private AutomationElement FindElementInWindow(string controlName, string automationId, int? controlType, AutomationElement window, int? level, int? childIndex)
         {
             int elCount = 0;
             var foundElements = new List<AutomationElement>();
@@ -250,7 +267,13 @@ namespace UIAuto
             {
                 if (currLevel == level)
                 {
-                    if (currentNode.Current.Name == controlName && 
+                    var currentName = currentNode.Current.Name;
+
+                    //cached control names that are null may become blank strings after caching
+                    if (currentName == null)
+                        currentName = "";
+
+                    if (currentName == controlName && 
                         currentNode.Current.AutomationId == automationId &&
                         currentNode.Current.ControlType.Id == controlType )
                     {
@@ -275,7 +298,22 @@ namespace UIAuto
 
             elCount = foundElements.Count;
 
-            if (elCount != 1)
+            if (elCount > 1)
+            {
+                /*
+                foreach(var el in foundElements)
+                {
+                    int idx = GetChildIndex(el);
+
+                    if (idx == childIndex)
+                        return el;
+                }
+                */
+
+                return null;
+            }
+
+            if (elCount == 0)
                 return null;
 
             return foundElements[0];
@@ -354,21 +392,15 @@ namespace UIAuto
 
         private void RecordKeypress(int wparam)
         {
-            RecordKeypressWorker(wparam);
-
-            labelStatus.Text = status;
-        }
-
-        private void RecordKeypressWorker(int wparam)
-        {
-            UIAction uiAction = new UIAction();
-
-            uiAction.EventType = "keypress";
-            uiAction.VKeyCode = keyboardHookStruct.VirtualKeyCode;
-            uiAction.ScanCode = keyboardHookStruct.ScanCode;
-            uiAction.Flags = keyboardHookStruct.Flags;
-            uiAction.ExtraInfo = keyboardHookStruct.ExtraInfo;
-            uiAction.elapsed = stopwatch.Elapsed.TotalMilliseconds;
+            UIAction uiAction = new()
+            {
+                EventType = "keypress",
+                VKeyCode = keyboardHookStruct.VirtualKeyCode,
+                ScanCode = keyboardHookStruct.ScanCode,
+                Flags = keyboardHookStruct.Flags,
+                ExtraInfo = keyboardHookStruct.ExtraInfo,
+                elapsed = stopwatch.Elapsed.TotalMilliseconds
+            };
 
             if (wparam == WM_KEYUP || wparam == WM_SYSKEYUP)
             {
@@ -379,6 +411,8 @@ namespace UIAuto
 
             stopwatch.Reset();
             stopwatch.Start();
+
+            labelStatus.Text = status;
         }
 
         private /*async*/ void RecordMouse(int wparam)
@@ -462,6 +496,9 @@ namespace UIAuto
                 uiAction.ExtraInfo = (int)currentMouseHookStruct.dwExtraInfo;
                 uiAction.Flags = (int)currentMouseHookStruct.flags;
 
+                // performance hit
+                //uiAction.ChildIndex = GetChildIndex(element);
+
                 if (wparam == WM_LBUTTONDOWN)
                     uiAction.Flags |= MOUSEEVENTF_LEFTDOWN;
                 if (wparam == WM_LBUTTONUP)
@@ -510,7 +547,7 @@ namespace UIAuto
         {
             if (scriptName == null || scriptName.Length == 0)
             {
-                labelStatus.Text = "Specify script name";
+                labelStatus.Text = "Specify recording file";
                 return;
             }
 
@@ -578,8 +615,7 @@ namespace UIAuto
         {
             labelStatus.Text = "";
 
-            int oldx = 0;
-            int oldy = 0;
+            var screenBounds = Screen.PrimaryScreen.Bounds;
 
             UIAction[] steps = JsonSerializer.Deserialize<UIAction[]>(File.ReadAllText(scriptName));
 
@@ -597,7 +633,7 @@ namespace UIAuto
                         return;
                     }
 
-                    AutomationElement targetElement = FindElementInWindow(action.ControlName, action.AutomationId, action.ControlType, topLevelWindow, action.Level);
+                    AutomationElement targetElement = FindElementInWindow(action.ControlName, action.AutomationId, action.ControlType, topLevelWindow, action.Level, action.ChildIndex);
 
                     if (targetElement == null)
                     {
@@ -619,25 +655,24 @@ namespace UIAuto
                         y = (int)point.Y;
                     }
 
-                    Cursor.Position = new System.Drawing.Point((int)x, (int)y);
-                    
+                    int dx = (int)x * 65535 / screenBounds.Width + 1;
+                    int dy = (int)y * 65535 / screenBounds.Height + 1;
+
                     if (action.Flags == MOUSEEVENTF_LEFTUP)
                     {
-                        mouse_event(MOUSEEVENTF_MOVE, (uint)(((int) x) - oldx), (uint)(((int)y) - oldy), 0, (uint)action.ExtraInfo);
+                        mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, dx, dy, 0, (uint)action.ExtraInfo);
                         mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, (uint)action.ExtraInfo);
                     }
                     else if (action.Flags == MOUSEEVENTF_RIGHTUP)
                     {
-                        mouse_event(MOUSEEVENTF_MOVE, (uint)(((int)x) - oldx), (uint)(((int)y) - oldy), 0, (uint)action.ExtraInfo);
+                        mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, dx, dy, 0, (uint)action.ExtraInfo);
                         mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, (uint)action.ExtraInfo);
                     }
                     else
                     {
+                        Cursor.Position = new System.Drawing.Point((int)x, (int)y);
                         mouse_event((uint) action.Flags, 0, 0, 0, (uint)action.ExtraInfo);
                     }
-
-                    oldx = (int)x;
-                    oldy = (int)y;
                 }
                 else if (action.EventType == "keypress")
                 {
