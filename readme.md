@@ -1,6 +1,6 @@
 # Elegant Recorder
 
-![image](https://user-images.githubusercontent.com/981184/191825392-c3e051b0-e24a-4bc9-a23d-a2b984517861.png)
+![image](https://user-images.githubusercontent.com/981184/191975186-e6527de6-3ff1-4c46-b0a1-ed4cde394ca0.png)
 
 Experimental tool that allows you to record and replay your actions inside Windows applications.
 

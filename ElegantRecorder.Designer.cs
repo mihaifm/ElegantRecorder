@@ -151,6 +151,7 @@ namespace UIAuto
             this.Controls.Add(this.labelStatus);
             this.Name = "ElegantRecorder";
             this.Text = "Elegant Recorder";
+            this.TopMost = true;
             this.ResumeLayout(false);
             this.PerformLayout();
 

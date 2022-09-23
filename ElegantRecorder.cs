@@ -633,26 +633,28 @@ namespace UIAuto
                         return;
                     }
 
+                    Rect windowRect = (Rect)topLevelWindow.GetCurrentPropertyValue(AutomationElement.BoundingRectangleProperty);
+
+                    var x = (int)windowRect.X + action.OffsetX;
+                    var y = (int)windowRect.Y + action.OffsetY;
+
                     AutomationElement targetElement = FindElementInWindow(action.ControlName, action.AutomationId, action.ControlType, topLevelWindow, action.Level, action.ChildIndex);
 
                     if (targetElement == null)
                     {
                         labelStatus.Text = "Failed to find element: " + action.ControlName;
-                        return;
                     }
-
-                    Rect windowRect = (Rect)topLevelWindow.GetCurrentPropertyValue(AutomationElement.BoundingRectangleProperty);
-                    Rect elementRect = (Rect)targetElement.GetCurrentPropertyValue(AutomationElement.BoundingRectangleProperty);
-
-                    var x = (int)windowRect.X + action.OffsetX;
-                    var y = (int)windowRect.Y + action.OffsetY;
-
-                    if (elementRect.X > x || x > elementRect.X + elementRect.Width ||
-                        elementRect.Y > y || y > elementRect.Y + elementRect.Height)
+                    else
                     {
-                        var point = targetElement.GetClickablePoint();
-                        x = (int)point.X;
-                        y = (int)point.Y;
+                        Rect elementRect = (Rect)targetElement.GetCurrentPropertyValue(AutomationElement.BoundingRectangleProperty);
+
+                        if (elementRect.X > x || x > elementRect.X + elementRect.Width ||
+                            elementRect.Y > y || y > elementRect.Y + elementRect.Height)
+                        {
+                            var point = targetElement.GetClickablePoint();
+                            x = (int)point.X;
+                            y = (int)point.Y;
+                        }
                     }
 
                     int dx = (int)x * 65535 / screenBounds.Width + 1;
