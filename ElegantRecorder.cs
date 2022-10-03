@@ -12,8 +12,10 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Forms;
 using System.Text.Json.Serialization;
+using ElegantRecorder.Properties;
+using System.Threading.Tasks;
 
-namespace UIAuto
+namespace ElegantRecorder
 {
     public partial class ElegantRecorder : Form
     {
@@ -41,10 +43,14 @@ namespace UIAuto
         private const int MOUSEEVENTF_RIGHTUP = 0x10;
         private const int KEYEVENTF_KEYUP = 0x0002;
 
-        private string scriptName;
-        private string exeName;
         private string status;
         private Stopwatch stopwatch = new Stopwatch();
+
+        public string ConfigFileName;
+        public string ConfigFilePath;
+
+        public ElegantOptions ElegantOptions;
+
         private class UIAction
         {
             [JsonPropertyName("event")]
@@ -135,6 +141,40 @@ namespace UIAuto
             InitializeComponent();
 
             labelStatus.Text = "";
+
+            ReadOrCreateConfig();
+        }
+
+        private void ReadOrCreateConfig()
+        {
+            ConfigFileName = "ElegantRecorderConfig.json";
+            ConfigFilePath = System.Windows.Forms.Application.StartupPath + ConfigFileName;
+
+            if (File.Exists(ConfigFilePath))
+            {
+                try
+                {
+                    ElegantOptions = JsonSerializer.Deserialize<ElegantOptions>(File.ReadAllText(ConfigFilePath));
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show("Failed to read configuratin file. " + ex.ToString());
+                }
+            }
+            else
+            {
+                try
+                {
+                    File.Create(ConfigFilePath).Close();
+
+                    ElegantOptions = new ElegantOptions();
+                    File.WriteAllText(ConfigFilePath, JsonSerializer.Serialize(ElegantOptions));
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show("Failed to create configuration file. " + ex.ToString());
+                }
+            }
         }
 
         public void InstallHooks()
@@ -248,7 +288,7 @@ namespace UIAuto
                     int pid = (int)window.GetCurrentPropertyValue(AutomationElement.ProcessIdProperty);
                     var process = Process.GetProcessById(pid);
 
-                    if (Path.GetFileNameWithoutExtension(exeName).ToLower() == process.ProcessName.ToLower())
+                    if (Path.GetFileNameWithoutExtension(ElegantOptions.ExePath).ToLower() == process.ProcessName.ToLower())
                         return window;
                 }
 
@@ -479,7 +519,7 @@ namespace UIAuto
 
                 status = elementName + " : " + automationId + " [" + processName + "]";
 
-                if (Path.GetFileNameWithoutExtension(exeName).ToLower() != processName.ToLower())
+                if (Path.GetFileNameWithoutExtension(ElegantOptions.ExePath).ToLower() != processName.ToLower())
                     return;
 
                 Rect boundingRect = (Rect)topLevelWindow.GetCurrentPropertyValue(AutomationElement.BoundingRectangleProperty);
@@ -519,109 +559,152 @@ namespace UIAuto
             }
         }
 
-        private void buttonBrowse_Click(object sender, EventArgs e)
+        private bool recording = false;
+        private bool replaying = false;
+
+        private void ResetButtons()
         {
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
-
-            if (dialog.ShowDialog() == DialogResult.OK)
-            {
-                textBoxScriptName.Text = dialog.FileName;
-                scriptName = dialog.FileName;
-            }
-        }
-
-        private void buttonBrowseExe_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "Exe files (*.exe)|*.exe|All files (*.*)|*.*";
-
-            if (dialog.ShowDialog() == DialogResult.OK)
-            {
-                textBoxExeName.Text = dialog.FileName;
-                exeName = dialog.FileName;
-            }
+            recording = false;
+            replaying = false;
+            buttonRecord.Image = Resources.record_fill;
+            buttonReplay.Image = Resources.play_fill;
         }
 
         private void buttonRecord_Click(object sender, EventArgs e)
         {
-            if (scriptName == null || scriptName.Length == 0)
+            if (recording || replaying)
+                return;
+
+            buttonRecord.Image = Resources.record_edit;
+            recording = true;
+
+            if (ElegantOptions.RecordingPath.Length == 0)
             {
                 labelStatus.Text = "Specify recording file";
+                
                 return;
             }
 
-            if (exeName == null || exeName.Length == 0)
+            if (ElegantOptions.RestrictToExe == true && ElegantOptions.ExePath.Length == 0)
             {
                 labelStatus.Text = "Specify target executable";
+                ResetButtons();
                 return;
             }
 
-            if (!File.Exists(scriptName))
+            if (!File.Exists(ElegantOptions.RecordingPath))
             {
                 try
                 {
-                    File.Create(scriptName);
+                    File.Create(ElegantOptions.RecordingPath);
                 }
                 catch
                 {
                     labelStatus.Text = "Failed to create script file";
+                    ResetButtons();
                     return;
                 }
             }
 
             uiSteps.Clear();
-            File.WriteAllText(scriptName, "");
+            File.WriteAllText(ElegantOptions.RecordingPath, "");
             stopwatch.Reset();
 
             InstallHooks();
-
-            buttonRecord.Text = "Recording...";
         }
 
-        private void buttonStop_Click(object sender, EventArgs e)
+        CancellationTokenSource tokenSource = new CancellationTokenSource();
+        CancellationToken token;
+
+        // Use MouseDown istead of Click event to avoid situations where other UI events happen between mouse down and up, due to the automation
+        private void buttonStop_MouseDown(object sender, MouseEventArgs e)
         {
             UninstallHooks();
 
-            buttonRecord.Text = "Record";
             stopwatch.Reset();
 
-            File.WriteAllText(scriptName, "[\n");
-
-            JsonSerializerOptions jsonOptions = new()
+            if (tokenSource != null)
             {
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            };
-
-            for (int i = 0; i < uiSteps.Count; i++)
-            {
-                string jsonString = JsonSerializer.Serialize(uiSteps[i], jsonOptions);
-                File.AppendAllText(scriptName, jsonString);
-
-                if (i != uiSteps.Count - 1)
-                {
-                    File.AppendAllText(scriptName, ",\n");
-                }
-                else
-                {
-                    File.AppendAllText(scriptName, "\n");
-                }
+                tokenSource.Cancel();
             }
 
-            File.AppendAllText(scriptName, "]");
+            if (recording)
+            {
+                File.WriteAllText(ElegantOptions.RecordingPath, "[\n");
+
+                JsonSerializerOptions jsonOptions = new()
+                {
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
+
+                for (int i = 0; i < uiSteps.Count; i++)
+                {
+                    string jsonString = JsonSerializer.Serialize(uiSteps[i], jsonOptions);
+                    File.AppendAllText(ElegantOptions.RecordingPath, jsonString);
+
+                    if (i != uiSteps.Count - 1)
+                    {
+                        File.AppendAllText(ElegantOptions.RecordingPath, ",\n");
+                    }
+                    else
+                    {
+                        File.AppendAllText(ElegantOptions.RecordingPath, "\n");
+                    }
+                }
+
+                File.AppendAllText(ElegantOptions.RecordingPath, "]");
+            }
+
+            ResetButtons();
         }
 
-        private void buttonReplay_Click(object sender, EventArgs e)
+        private async void buttonReplay_Click(object sender, EventArgs e)
         {
-            labelStatus.Text = "";
+            if (replaying)
+                return;
 
+            replaying = true;
+            buttonReplay.Image = Resources.play_edit;
+
+            tokenSource.Dispose();
+            tokenSource = new CancellationTokenSource();
+            token = tokenSource.Token;
+
+            labelStatus.Text = "";
+            status = "";
+
+            var task = Task.Run(ReplayWorker, token);
+
+            try
+            {
+                await task;
+            }
+            catch (Exception) { }
+
+            labelStatus.Text = status;
+
+            ResetButtons();
+        }
+
+        void ReplayWorker()
+        {
             var screenBounds = Screen.PrimaryScreen.Bounds;
 
-            UIAction[] steps = JsonSerializer.Deserialize<UIAction[]>(File.ReadAllText(scriptName));
+            UIAction[] steps = JsonSerializer.Deserialize<UIAction[]>(File.ReadAllText(ElegantOptions.RecordingPath));
 
             foreach (var action in steps)
             {
                 Thread.Sleep((int)action.elapsed);
+
+                try
+                {
+                    token.ThrowIfCancellationRequested();
+                }
+                catch (OperationCanceledException)
+                {
+                    status = "Replay stopped";
+                    return;
+                }
 
                 if (action.EventType == "click")
                 {
@@ -629,7 +712,7 @@ namespace UIAuto
 
                     if (topLevelWindow == null)
                     {
-                        labelStatus.Text = "Failed to find window: " + action.TopLevelWindow;
+                        status = "Failed to find window: " + action.TopLevelWindow;
                         return;
                     }
 
@@ -642,7 +725,7 @@ namespace UIAuto
 
                     if (targetElement == null)
                     {
-                        labelStatus.Text = "Failed to find element: " + action.ControlName;
+                        status = "Failed to find element: " + action.ControlName;
                     }
                     else
                     {
@@ -673,7 +756,7 @@ namespace UIAuto
                     else
                     {
                         Cursor.Position = new System.Drawing.Point((int)x, (int)y);
-                        mouse_event((uint) action.Flags, 0, 0, 0, (uint)action.ExtraInfo);
+                        mouse_event((uint)action.Flags, 0, 0, 0, (uint)action.ExtraInfo);
                     }
                 }
                 else if (action.EventType == "keypress")
@@ -682,17 +765,20 @@ namespace UIAuto
                 }
             }
 
-            labelStatus.Text = "Replay finished";
+            status = "Replay finished";
         }
 
-        private void textBoxScriptName_TextChanged(object sender, EventArgs e)
+        private void buttonSettings_Click(object sender, EventArgs e)
         {
-            scriptName = textBoxScriptName.Text;
+            Options options = new Options(this);
+            options.Show();
         }
 
-        private void textBoxExeName_TextChanged(object sender, EventArgs e)
+        private void buttonPin_Click(object sender, EventArgs e)
         {
-            exeName = textBoxExeName.Text;
+            TopMost = !TopMost;
+
+            buttonPin.Image = TopMost ? Resources.geo_edit : Resources.geo;
         }
     }
 }
