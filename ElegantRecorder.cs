@@ -34,6 +34,7 @@ namespace ElegantRecorder
         private const int WM_MOUSEWHEEL = 0x020A;
         private const int WM_RBUTTONDOWN = 0x0204;
         private const int WM_RBUTTONUP = 0x0205;
+        private const int WM_MOUSEMOVE = 0x0200;
 
         private const int MOUSEEVENTF_MOVE = 0x0001;
         private const int MOUSEEVENTF_ABSOLUTE = 0x8000;
@@ -41,6 +42,7 @@ namespace ElegantRecorder
         private const int MOUSEEVENTF_LEFTUP = 0x0004;
         private const int MOUSEEVENTF_RIGHTDOWN = 0x08;
         private const int MOUSEEVENTF_RIGHTUP = 0x10;
+        private const int MOUSEEVENTF_WHEEL = 0x0800;
         private const int KEYEVENTF_KEYUP = 0x0002;
 
         private string status;
@@ -77,6 +79,8 @@ namespace ElegantRecorder
             public int? ScanCode { get; set; }
             [JsonPropertyName("flags")]
             public int? Flags { get; set; }
+            [JsonPropertyName("mdata")]
+            public int? MouseData { get; set; }
             [JsonPropertyName("einfo")]
             public int? ExtraInfo { get; set; }
             [JsonPropertyName("t")]
@@ -96,9 +100,9 @@ namespace ElegantRecorder
         private struct MouseHookStruct
         {
             public POINT pt;
-            public uint mouseData;
-            public uint flags;
-            public uint time;
+            public int mouseData;
+            public int flags;
+            public int time;
             public IntPtr dwExtraInfo;
         }
 
@@ -209,6 +213,14 @@ namespace ElegantRecorder
 
                     prevMouseHookStruct = currentMouseHookStruct;
                 }
+                else if (wParam.ToInt32() == WM_MOUSEMOVE)
+                {
+                    RecordMouseMove(wParam.ToInt32());
+                }
+                else if (wParam.ToInt32() == WM_MOUSEWHEEL)
+                {
+                    RecordMouseWheel(wParam.ToInt32());
+                }
             }
 
             return CallNextHookEx(mouseHookID, nCode, wParam, lParam);
@@ -285,6 +297,9 @@ namespace ElegantRecorder
             {
                 if (window.Current.Name == name)
                 {
+                    if (!ElegantOptions.RestrictToExe)
+                        return window;
+
                     int pid = (int)window.GetCurrentPropertyValue(AutomationElement.ProcessIdProperty);
                     var process = Process.GetProcessById(pid);
 
@@ -430,6 +445,52 @@ namespace ElegantRecorder
             return result;
         }
 
+        private const int mouseMoveThreshold = 30;
+
+        private void RecordMouseMove(int wparam)
+        {
+            if (!ElegantOptions.RecordMouseMove)
+                return;
+
+            if (stopwatch.ElapsedMilliseconds < mouseMoveThreshold && uiSteps.Count > 0)
+                return;
+
+            UIAction uiAction = new()
+            {
+                EventType = "mousemove",
+                OffsetX = currentMouseHookStruct.pt.x,
+                OffsetY = currentMouseHookStruct.pt.y,
+                elapsed = stopwatch.Elapsed.TotalMilliseconds,
+                ExtraInfo = (int)currentMouseHookStruct.dwExtraInfo,
+                Flags = (int)currentMouseHookStruct.flags
+            };
+
+            uiSteps.Add(uiAction);
+
+            stopwatch.Reset();
+            stopwatch.Start();
+        }
+
+        private void RecordMouseWheel(int wparam)
+        {
+            UIAction uiAction = new()
+            {
+                EventType = "mousewheel",
+                elapsed = stopwatch.Elapsed.TotalMilliseconds,
+                MouseData = currentMouseHookStruct.mouseData,
+                ExtraInfo = (int)currentMouseHookStruct.dwExtraInfo,
+                Flags = currentMouseHookStruct.flags
+            };
+
+            uiAction.Flags |= MOUSEEVENTF_WHEEL;
+            uiAction.MouseData = uiAction.MouseData >> 16; //get the high-order word
+
+            uiSteps.Add(uiAction);
+
+            stopwatch.Reset();
+            stopwatch.Start();
+        }
+
         private void RecordKeypress(int wparam)
         {
             UIAction uiAction = new()
@@ -519,8 +580,17 @@ namespace ElegantRecorder
 
                 status = elementName + " : " + automationId + " [" + processName + "]";
 
-                if (Path.GetFileNameWithoutExtension(ElegantOptions.ExePath).ToLower() != processName.ToLower())
-                    return;
+                if (ElegantOptions.RestrictToExe)
+                {
+                    if (Path.GetFileNameWithoutExtension(ElegantOptions.ExePath).ToLower() != processName.ToLower())
+                        return;
+                }
+                else
+                {
+                    //ignore actions on the recorder GUI
+                    if (processName == Process.GetCurrentProcess().ProcessName)
+                        return;
+                }
 
                 Rect boundingRect = (Rect)topLevelWindow.GetCurrentPropertyValue(AutomationElement.BoundingRectangleProperty);
 
@@ -568,12 +638,15 @@ namespace ElegantRecorder
             replaying = false;
             buttonRecord.Image = Resources.record_fill;
             buttonReplay.Image = Resources.play_fill;
+            buttonPause.Image = Resources.pause_fill;
         }
 
         private void buttonRecord_Click(object sender, EventArgs e)
         {
             if (recording || replaying)
                 return;
+
+            ResetButtons();
 
             buttonRecord.Image = Resources.record_edit;
             recording = true;
@@ -596,7 +669,8 @@ namespace ElegantRecorder
             {
                 try
                 {
-                    File.Create(ElegantOptions.RecordingPath);
+                    var stream = File.Create(ElegantOptions.RecordingPath);
+                    stream.Close();
                 }
                 catch
                 {
@@ -606,8 +680,6 @@ namespace ElegantRecorder
                 }
             }
 
-            uiSteps.Clear();
-            File.WriteAllText(ElegantOptions.RecordingPath, "");
             stopwatch.Reset();
 
             InstallHooks();
@@ -618,6 +690,11 @@ namespace ElegantRecorder
 
         // Use MouseDown istead of Click event to avoid situations where other UI events happen between mouse down and up, due to the automation
         private void buttonStop_MouseDown(object sender, MouseEventArgs e)
+        {
+            Stop(false);
+        }
+
+        private void Stop(bool paused)
         {
             UninstallHooks();
 
@@ -656,12 +733,20 @@ namespace ElegantRecorder
             }
 
             ResetButtons();
+
+            if (paused == false)
+            {
+                uiSteps.Clear();
+                currentActionIndex = 0;
+            }
         }
 
         private async void buttonReplay_Click(object sender, EventArgs e)
         {
             if (replaying)
                 return;
+
+            ResetButtons();
 
             replaying = true;
             buttonReplay.Image = Resources.play_edit;
@@ -682,9 +767,9 @@ namespace ElegantRecorder
             catch (Exception) { }
 
             labelStatus.Text = status;
-
-            ResetButtons();
         }
+
+        private int currentActionIndex = 0;
 
         void ReplayWorker()
         {
@@ -692,9 +777,30 @@ namespace ElegantRecorder
 
             UIAction[] steps = JsonSerializer.Deserialize<UIAction[]>(File.ReadAllText(ElegantOptions.RecordingPath));
 
-            foreach (var action in steps)
+            if (currentActionIndex >= steps.Length - 1)
+                currentActionIndex = 0;
+
+            //var testwatch = new Stopwatch();
+            //testwatch.Reset();
+            //testwatch.Start();
+            //double totalElapsed = 0;
+
+            for (int i = currentActionIndex; i < steps.Length; i++)
             {
-                Thread.Sleep((int)action.elapsed);
+                var action = steps[i];
+
+                currentActionIndex = i;
+
+                Thread.Sleep((int)ElegantOptions.GetPlaybackSpeedDuration(action.elapsed));
+
+                //todo delete
+                //totalElapsed += action.elapsed;
+
+                //if (i == 100)
+                //{
+                //    System.Windows.Forms.MessageBox.Show("Total elapsed: " + totalElapsed + " " + "Testwatch " + testwatch.ElapsedMilliseconds);
+                //    return;
+                //}
 
                 try
                 {
@@ -702,7 +808,7 @@ namespace ElegantRecorder
                 }
                 catch (OperationCanceledException)
                 {
-                    status = "Replay stopped";
+                    status = "Replay interrupted";
                     return;
                 }
 
@@ -713,6 +819,7 @@ namespace ElegantRecorder
                     if (topLevelWindow == null)
                     {
                         status = "Failed to find window: " + action.TopLevelWindow;
+                        ResetButtons();
                         return;
                     }
 
@@ -759,6 +866,18 @@ namespace ElegantRecorder
                         mouse_event((uint)action.Flags, 0, 0, 0, (uint)action.ExtraInfo);
                     }
                 }
+                else if (action.EventType == "mousemove")
+                {
+                    //todo - refactor repeatable code
+                    int dx = (int)action.OffsetX * 65535 / screenBounds.Width + 1;
+                    int dy = (int)action.OffsetY * 65535 / screenBounds.Height + 1;
+
+                    mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, dx, dy, 0, (uint)action.ExtraInfo);
+                }
+                else if (action.EventType == "mousewheel")
+                {
+                    mouse_event(MOUSEEVENTF_WHEEL, 0, 0, (int)action.MouseData, (uint)action.ExtraInfo);
+                }
                 else if (action.EventType == "keypress")
                 {
                     keybd_event((uint)action.VKeyCode, (uint)action.ScanCode, (uint)action.Flags, (uint)action.ExtraInfo);
@@ -766,6 +885,8 @@ namespace ElegantRecorder
             }
 
             status = "Replay finished";
+
+            ResetButtons();
         }
 
         private void buttonSettings_Click(object sender, EventArgs e)
@@ -779,6 +900,16 @@ namespace ElegantRecorder
             TopMost = !TopMost;
 
             buttonPin.Image = TopMost ? Resources.geo_edit : Resources.geo;
+        }
+
+        private void buttonPause_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (!recording && !replaying)
+                return;
+
+            Stop(true);
+
+            buttonPause.Image = Resources.pause_edit;
         }
     }
 }

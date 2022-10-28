@@ -16,5 +16,24 @@
             ExePath = "";
             RecordingPath = System.Windows.Forms.Application.StartupPath + "ElegantRecording.json";
         }
+
+        public double GetPlaybackSpeedDuration(double initialDuration)
+        {
+            switch(PlaybackSpeed)
+            {
+                case "Fastest":
+                    return 0;
+                case "Fast":
+                    return 0.5 * initialDuration;
+                case "Normal":
+                    return initialDuration;
+                case "Slow":
+                    return 1.5 * initialDuration;
+                case "Slowest":
+                    return 2.0 * initialDuration;
+            }
+
+            return initialDuration;
+        }
     }
 }

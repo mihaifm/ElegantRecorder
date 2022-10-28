@@ -31,6 +31,7 @@ namespace ElegantRecorder
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ElegantRecorder));
             this.labelStatus = new System.Windows.Forms.Label();
             this.buttonPin = new System.Windows.Forms.Button();
             this.buttonReplay = new System.Windows.Forms.Button();
@@ -104,6 +105,7 @@ namespace ElegantRecorder
             this.buttonPause.TabIndex = 15;
             this.toolTipRec.SetToolTip(this.buttonPause, "Pause");
             this.buttonPause.UseVisualStyleBackColor = true;
+            this.buttonPause.MouseDown += new System.Windows.Forms.MouseEventHandler(this.buttonPause_MouseDown);
             // 
             // buttonSettings
             // 
@@ -127,6 +129,7 @@ namespace ElegantRecorder
             this.Controls.Add(this.buttonReplay);
             this.Controls.Add(this.buttonPin);
             this.Controls.Add(this.labelStatus);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ElegantRecorder";
             this.Text = "Elegant Recorder";
             this.ResumeLayout(false);

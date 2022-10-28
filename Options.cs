@@ -20,7 +20,7 @@ namespace ElegantRecorder
             checkBoxRestrictToExe.Checked = elegantOptions.RestrictToExe;
             textBoxExePath.Text = elegantOptions.ExePath;
             textBoxRecordingPath.Text = elegantOptions.RecordingPath;
-
+            comboBoxSpeed.SelectedItem = elegantOptions.PlaybackSpeed;
 
             textBoxExePath.Enabled = checkBoxRestrictToExe.Checked;
             buttonBrowseExe.Enabled = checkBoxRestrictToExe.Checked;
@@ -34,6 +34,7 @@ namespace ElegantRecorder
             elegantOptions.RestrictToExe = checkBoxRestrictToExe.Checked;
             elegantOptions.ExePath = textBoxExePath.Text;
             elegantOptions.RecordingPath = textBoxRecordingPath.Text;
+            elegantOptions.PlaybackSpeed = comboBoxSpeed.SelectedItem as string;
             
             File.WriteAllText(elegantRecorder.ConfigFilePath, JsonSerializer.Serialize(elegantOptions));
         }
@@ -69,6 +70,12 @@ namespace ElegantRecorder
         private void buttonCancel_Click(object sender, EventArgs e)
         {
             Close();
+        }
+
+        private void checkBoxRestrictToExe_CheckedChanged(object sender, EventArgs e)
+        {
+            textBoxExePath.Enabled = checkBoxRestrictToExe.Checked;
+            buttonBrowseExe.Enabled = checkBoxRestrictToExe.Checked;
         }
     }
 }

@@ -29,6 +29,7 @@ namespace ElegantRecorder
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Options));
             this.label1 = new System.Windows.Forms.Label();
             this.buttonOk = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
@@ -39,7 +40,7 @@ namespace ElegantRecorder
             this.buttonBrowseExe = new System.Windows.Forms.Button();
             this.groupBoxOptions = new System.Windows.Forms.GroupBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
+            this.comboBoxSpeed = new System.Windows.Forms.ComboBox();
             this.checkBoxRecMouseMove = new System.Windows.Forms.CheckBox();
             this.groupBoxOptions.SuspendLayout();
             this.SuspendLayout();
@@ -105,6 +106,7 @@ namespace ElegantRecorder
             this.checkBoxRestrictToExe.TabIndex = 6;
             this.checkBoxRestrictToExe.Text = "Restrict to exe";
             this.checkBoxRestrictToExe.UseVisualStyleBackColor = true;
+            this.checkBoxRestrictToExe.CheckedChanged += new System.EventHandler(this.checkBoxRestrictToExe_CheckedChanged);
             // 
             // textBoxExePath
             // 
@@ -126,7 +128,7 @@ namespace ElegantRecorder
             // groupBoxOptions
             // 
             this.groupBoxOptions.Controls.Add(this.label2);
-            this.groupBoxOptions.Controls.Add(this.comboBox1);
+            this.groupBoxOptions.Controls.Add(this.comboBoxSpeed);
             this.groupBoxOptions.Controls.Add(this.checkBoxRecMouseMove);
             this.groupBoxOptions.Controls.Add(this.label1);
             this.groupBoxOptions.Controls.Add(this.buttonBrowseExe);
@@ -149,19 +151,20 @@ namespace ElegantRecorder
             this.label2.TabIndex = 11;
             this.label2.Text = "Playback speed";
             // 
-            // comboBox1
+            // comboBoxSpeed
             // 
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Items.AddRange(new object[] {
+            this.comboBoxSpeed.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxSpeed.FormattingEnabled = true;
+            this.comboBoxSpeed.Items.AddRange(new object[] {
             "Fastest",
             "Fast",
             "Normal",
             "Slow",
             "Slowest"});
-            this.comboBox1.Location = new System.Drawing.Point(100, 27);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(84, 23);
-            this.comboBox1.TabIndex = 10;
+            this.comboBoxSpeed.Location = new System.Drawing.Point(100, 27);
+            this.comboBoxSpeed.Name = "comboBoxSpeed";
+            this.comboBoxSpeed.Size = new System.Drawing.Size(84, 23);
+            this.comboBoxSpeed.TabIndex = 10;
             // 
             // checkBoxRecMouseMove
             // 
@@ -181,6 +184,7 @@ namespace ElegantRecorder
             this.Controls.Add(this.groupBoxOptions);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.buttonOk);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Options";
             this.Text = "Elegant Recorder Options";
             this.groupBoxOptions.ResumeLayout(false);
@@ -202,6 +206,6 @@ namespace ElegantRecorder
         private System.Windows.Forms.GroupBox groupBoxOptions;
         private System.Windows.Forms.CheckBox checkBoxRecMouseMove;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.ComboBox comboBoxSpeed;
     }
 }
