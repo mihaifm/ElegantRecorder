@@ -130,6 +130,9 @@ namespace ElegantRecorder
         public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
         private delegate IntPtr LowLevelHookProc(int nCode, IntPtr wParam, IntPtr lParam);
+        private LowLevelHookProc mouseDelegate = null;
+        private LowLevelHookProc keyboardDelegate = null;
+
 
         public MouseHookStruct CurrentMouseHookStruct;
         public MouseHookStruct PrevMouseHookStruct;
@@ -139,9 +142,13 @@ namespace ElegantRecorder
 
         public void InstallHooks()
         {
-            mouseHookID = SetWindowsHookEx(WH_MOUSE_LL, MouseHookCallback, GetModuleHandle(moduleName), 0);
+            mouseDelegate = new LowLevelHookProc(MouseHookCallback);
 
-            keyboardHookID = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardHookCallback, GetModuleHandle(moduleName), 0);
+            mouseHookID = SetWindowsHookEx(WH_MOUSE_LL, mouseDelegate, GetModuleHandle(moduleName), 0);
+
+            keyboardDelegate = new LowLevelHookProc(KeyboardHookCallback);
+
+            keyboardHookID = SetWindowsHookEx(WH_KEYBOARD_LL, keyboardDelegate, GetModuleHandle(moduleName), 0);
         }
 
         public void UninstallHooks()
