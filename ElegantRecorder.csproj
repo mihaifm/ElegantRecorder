@@ -6,6 +6,7 @@
 		<UseWPF>true</UseWPF>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<ApplicationIcon>elegant.ico</ApplicationIcon>
+		<Nullable>annotations</Nullable>
 	</PropertyGroup>
 	<ItemGroup>
 	  <Reference Include="Interop.UIAutomationClient">

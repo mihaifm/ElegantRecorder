@@ -17,10 +17,12 @@ namespace ElegantRecorder
             var elegantOptions = elegantRecorder.ElegantOptions;
 
             checkBoxRecMouseMove.Checked = elegantOptions.RecordMouseMove;
+            checkBoxRecClipboard.Checked = elegantOptions.RecordClipboard;
             checkBoxRestrictToExe.Checked = elegantOptions.RestrictToExe;
             textBoxExePath.Text = elegantOptions.ExePath;
             textBoxRecordingPath.Text = elegantOptions.RecordingPath;
             comboBoxSpeed.SelectedItem = elegantOptions.PlaybackSpeed;
+            comboBoxAutomationEngine.SelectedItem = elegantOptions.AutomationEngine;
 
             textBoxExePath.Enabled = checkBoxRestrictToExe.Checked;
             buttonBrowseExe.Enabled = checkBoxRestrictToExe.Checked;
@@ -31,12 +33,31 @@ namespace ElegantRecorder
             var elegantOptions = elegantRecorder.ElegantOptions;
 
             elegantOptions.RecordMouseMove = checkBoxRecMouseMove.Checked;
+            elegantOptions.RecordClipboard = checkBoxRecClipboard.Checked;
             elegantOptions.RestrictToExe = checkBoxRestrictToExe.Checked;
             elegantOptions.ExePath = textBoxExePath.Text;
             elegantOptions.RecordingPath = textBoxRecordingPath.Text;
             elegantOptions.PlaybackSpeed = comboBoxSpeed.SelectedItem as string;
+            elegantOptions.AutomationEngine = comboBoxAutomationEngine.SelectedItem as string;
             
             File.WriteAllText(elegantRecorder.ConfigFilePath, JsonSerializer.Serialize(elegantOptions));
+        }
+
+        private void ChangeAutomationEngine()
+        {
+            string newAutomationEngine = (string)comboBoxAutomationEngine.SelectedItem;
+
+            if (newAutomationEngine == elegantRecorder.ElegantOptions.AutomationEngine)
+                return;
+
+            if (newAutomationEngine == "Win32")
+            {
+                elegantRecorder.AutomationEngine = new Win32Engine(elegantRecorder);
+            }
+            else if (newAutomationEngine == "UI Automation")
+            {
+                elegantRecorder.AutomationEngine = new UIAEngine(elegantRecorder);
+            }
         }
 
         private void buttonBrowseScript_Click(object sender, EventArgs e)
@@ -63,6 +84,7 @@ namespace ElegantRecorder
 
         private void buttonOk_Click(object sender, EventArgs e)
         {
+            ChangeAutomationEngine();
             SaveOptions();
             Close();
         }

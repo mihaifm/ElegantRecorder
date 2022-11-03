@@ -35,8 +35,16 @@ namespace ElegantRecorder
 
             WinAPI = new WinAPI(this);
 
-            AutomationEngine = new UIAEngine(this);
-            //AutomationEngine = new Win32Engine(this);
+            AutomationEngine = null;
+
+            if (ElegantOptions.AutomationEngine == "Win32")
+            {
+                AutomationEngine = new Win32Engine(this);
+            }
+            else if (ElegantOptions.AutomationEngine == "UI Automation")
+            {
+                AutomationEngine = new UIAEngine(this);
+            }
         }
 
         private void ReadOrCreateConfig()
@@ -343,6 +351,10 @@ namespace ElegantRecorder
                 {
                     AutomationEngine.ReplayKeypressAction(action, ref status);
                 }
+                else if (action.EventType == "clipboard")
+                {
+                    AutomationEngine.ReplayClipboardAction(action, ref status);
+                }
             }
 
             status = "Replay finished";
@@ -371,6 +383,33 @@ namespace ElegantRecorder
             Stop(true);
 
             buttonPause.Image = Resources.pause_edit;
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            if (!ElegantOptions.RecordClipboard)
+            {
+                base.WndProc(ref m);
+                return;
+            }
+
+            string clipboardText = "";
+
+            if (WinAPI.ProcessClipboardMessage(m.Msg, ref clipboardText))
+            {
+                UIAction uiAction = new UIAction();
+
+                AutomationEngine.FillClipboardAction(ref uiAction, ref status, clipboardText);
+
+                uiAction.elapsed = stopwatch.Elapsed.TotalMilliseconds;
+
+                uiSteps.Add(uiAction);
+
+                stopwatch.Reset();
+                stopwatch.Start();
+            }
+
+            base.WndProc(ref m);
         }
     }
 }

@@ -38,11 +38,17 @@ namespace ElegantRecorder
             this.checkBoxRestrictToExe = new System.Windows.Forms.CheckBox();
             this.textBoxExePath = new System.Windows.Forms.TextBox();
             this.buttonBrowseExe = new System.Windows.Forms.Button();
-            this.groupBoxOptions = new System.Windows.Forms.GroupBox();
+            this.groupBoxGeneral = new System.Windows.Forms.GroupBox();
+            this.checkBoxRecClipboard = new System.Windows.Forms.CheckBox();
             this.label2 = new System.Windows.Forms.Label();
             this.comboBoxSpeed = new System.Windows.Forms.ComboBox();
             this.checkBoxRecMouseMove = new System.Windows.Forms.CheckBox();
-            this.groupBoxOptions.SuspendLayout();
+            this.groupBoxAdvanced = new System.Windows.Forms.GroupBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.comboBoxAutomationEngine = new System.Windows.Forms.ComboBox();
+            this.groupBoxGeneral.SuspendLayout();
+            this.groupBoxAdvanced.SuspendLayout();
             this.SuspendLayout();
             // 
             // label1
@@ -58,7 +64,7 @@ namespace ElegantRecorder
             // buttonOk
             // 
             this.buttonOk.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonOk.Location = new System.Drawing.Point(426, 208);
+            this.buttonOk.Location = new System.Drawing.Point(426, 263);
             this.buttonOk.Name = "buttonOk";
             this.buttonOk.Size = new System.Drawing.Size(75, 23);
             this.buttonOk.TabIndex = 2;
@@ -69,7 +75,7 @@ namespace ElegantRecorder
             // buttonCancel
             // 
             this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonCancel.Location = new System.Drawing.Point(507, 208);
+            this.buttonCancel.Location = new System.Drawing.Point(507, 263);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
             this.buttonCancel.TabIndex = 3;
@@ -125,22 +131,34 @@ namespace ElegantRecorder
             this.buttonBrowseExe.UseVisualStyleBackColor = true;
             this.buttonBrowseExe.Click += new System.EventHandler(this.buttonBrowseExe_Click);
             // 
-            // groupBoxOptions
+            // groupBoxGeneral
             // 
-            this.groupBoxOptions.Controls.Add(this.label2);
-            this.groupBoxOptions.Controls.Add(this.comboBoxSpeed);
-            this.groupBoxOptions.Controls.Add(this.checkBoxRecMouseMove);
-            this.groupBoxOptions.Controls.Add(this.label1);
-            this.groupBoxOptions.Controls.Add(this.buttonBrowseExe);
-            this.groupBoxOptions.Controls.Add(this.textBoxRecordingPath);
-            this.groupBoxOptions.Controls.Add(this.textBoxExePath);
-            this.groupBoxOptions.Controls.Add(this.buttonBrowseScript);
-            this.groupBoxOptions.Controls.Add(this.checkBoxRestrictToExe);
-            this.groupBoxOptions.Location = new System.Drawing.Point(12, 12);
-            this.groupBoxOptions.Name = "groupBoxOptions";
-            this.groupBoxOptions.Size = new System.Drawing.Size(571, 180);
-            this.groupBoxOptions.TabIndex = 9;
-            this.groupBoxOptions.TabStop = false;
+            this.groupBoxGeneral.Controls.Add(this.checkBoxRecClipboard);
+            this.groupBoxGeneral.Controls.Add(this.label2);
+            this.groupBoxGeneral.Controls.Add(this.comboBoxSpeed);
+            this.groupBoxGeneral.Controls.Add(this.checkBoxRecMouseMove);
+            this.groupBoxGeneral.Controls.Add(this.label1);
+            this.groupBoxGeneral.Controls.Add(this.buttonBrowseExe);
+            this.groupBoxGeneral.Controls.Add(this.textBoxRecordingPath);
+            this.groupBoxGeneral.Controls.Add(this.textBoxExePath);
+            this.groupBoxGeneral.Controls.Add(this.buttonBrowseScript);
+            this.groupBoxGeneral.Controls.Add(this.checkBoxRestrictToExe);
+            this.groupBoxGeneral.Location = new System.Drawing.Point(12, 12);
+            this.groupBoxGeneral.Name = "groupBoxGeneral";
+            this.groupBoxGeneral.Size = new System.Drawing.Size(571, 180);
+            this.groupBoxGeneral.TabIndex = 9;
+            this.groupBoxGeneral.TabStop = false;
+            this.groupBoxGeneral.Text = "General";
+            // 
+            // checkBoxRecClipboard
+            // 
+            this.checkBoxRecClipboard.AutoSize = true;
+            this.checkBoxRecClipboard.Location = new System.Drawing.Point(147, 67);
+            this.checkBoxRecClipboard.Name = "checkBoxRecClipboard";
+            this.checkBoxRecClipboard.Size = new System.Drawing.Size(173, 19);
+            this.checkBoxRecClipboard.TabIndex = 12;
+            this.checkBoxRecClipboard.Text = "Record clipboard (text only)";
+            this.checkBoxRecClipboard.UseVisualStyleBackColor = true;
             // 
             // label2
             // 
@@ -176,19 +194,66 @@ namespace ElegantRecorder
             this.checkBoxRecMouseMove.Text = "Record mouse move";
             this.checkBoxRecMouseMove.UseVisualStyleBackColor = true;
             // 
+            // groupBoxAdvanced
+            // 
+            this.groupBoxAdvanced.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.groupBoxAdvanced.Controls.Add(this.label4);
+            this.groupBoxAdvanced.Controls.Add(this.label3);
+            this.groupBoxAdvanced.Controls.Add(this.comboBoxAutomationEngine);
+            this.groupBoxAdvanced.Location = new System.Drawing.Point(12, 198);
+            this.groupBoxAdvanced.Name = "groupBoxAdvanced";
+            this.groupBoxAdvanced.Size = new System.Drawing.Size(570, 59);
+            this.groupBoxAdvanced.TabIndex = 10;
+            this.groupBoxAdvanced.TabStop = false;
+            this.groupBoxAdvanced.Text = "Advanced";
+            // 
+            // label4
+            // 
+            this.label4.Location = new System.Drawing.Point(245, 17);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(315, 33);
+            this.label4.TabIndex = 2;
+            this.label4.Text = "UI Automation is more accurate but can be slow on large apps. Win32 is faster but" +
+    " less accurate.";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(6, 25);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(110, 15);
+            this.label3.TabIndex = 1;
+            this.label3.Text = "Automation engine";
+            // 
+            // comboBoxAutomationEngine
+            // 
+            this.comboBoxAutomationEngine.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxAutomationEngine.FormattingEnabled = true;
+            this.comboBoxAutomationEngine.Items.AddRange(new object[] {
+            "UI Automation",
+            "Win32"});
+            this.comboBoxAutomationEngine.Location = new System.Drawing.Point(122, 22);
+            this.comboBoxAutomationEngine.Name = "comboBoxAutomationEngine";
+            this.comboBoxAutomationEngine.Size = new System.Drawing.Size(107, 23);
+            this.comboBoxAutomationEngine.TabIndex = 0;
+            // 
             // Options
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(594, 243);
-            this.Controls.Add(this.groupBoxOptions);
+            this.ClientSize = new System.Drawing.Size(594, 298);
+            this.Controls.Add(this.groupBoxAdvanced);
+            this.Controls.Add(this.groupBoxGeneral);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.buttonOk);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Options";
             this.Text = "Elegant Recorder Options";
-            this.groupBoxOptions.ResumeLayout(false);
-            this.groupBoxOptions.PerformLayout();
+            this.groupBoxGeneral.ResumeLayout(false);
+            this.groupBoxGeneral.PerformLayout();
+            this.groupBoxAdvanced.ResumeLayout(false);
+            this.groupBoxAdvanced.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -203,9 +268,14 @@ namespace ElegantRecorder
         private System.Windows.Forms.CheckBox checkBoxRestrictToExe;
         private System.Windows.Forms.TextBox textBoxExePath;
         private System.Windows.Forms.Button buttonBrowseExe;
-        private System.Windows.Forms.GroupBox groupBoxOptions;
+        private System.Windows.Forms.GroupBox groupBoxGeneral;
         private System.Windows.Forms.CheckBox checkBoxRecMouseMove;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.ComboBox comboBoxSpeed;
+        private System.Windows.Forms.GroupBox groupBoxAdvanced;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.ComboBox comboBoxAutomationEngine;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.CheckBox checkBoxRecClipboard;
     }
 }

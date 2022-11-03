@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Diagnostics;
-using System.Text;
 using System.Drawing;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows;
 
 namespace ElegantRecorder
@@ -27,7 +27,7 @@ namespace ElegantRecorder
         public int mouseData;
         public int flags;
         public int time;
-        public IntPtr dwExtraInfo;
+        public UIntPtr dwExtraInfo;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -37,7 +37,7 @@ namespace ElegantRecorder
         public int ScanCode;
         public int Flags;
         public int Time;
-        public int ExtraInfo;
+        public UIntPtr ExtraInfo;
     }
 
     public enum GetAncestorFlags
@@ -89,6 +89,10 @@ namespace ElegantRecorder
         private const int MOUSEEVENTF_WHEEL = 0x0800;
         private const int KEYEVENTF_KEYUP = 0x0002;
 
+        private const int WM_CLIPBOARDUPDATE = 0x031D;
+
+        private const int CF_UNICODETEXT = 13;
+
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelHookProc lpfn, IntPtr hMod, uint dwThreadId);
 
@@ -103,10 +107,10 @@ namespace ElegantRecorder
         private static extern IntPtr GetModuleHandle(string lpModuleName);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-        public static extern void mouse_event(uint dwFlags, int dx, int dy, int dwData, uint dwExtraInfo);
+        public static extern void mouse_event(uint dwFlags, int dx, int dy, int dwData, UIntPtr dwExtraInfo);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-        public static extern void keybd_event(uint bVk, uint bScan, uint dwFlags, uint dwExtraInfo);
+        public static extern void keybd_event(uint bVk, uint bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
         [DllImport("user32.dll")]
         public static extern IntPtr WindowFromPoint(POINT point);
@@ -129,6 +133,26 @@ namespace ElegantRecorder
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool AddClipboardFormatListener(IntPtr hwnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool OpenClipboard(IntPtr hWndNewOwner);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool CloseClipboard();
+
+        [DllImport("user32.dll")]
+        static extern bool EmptyClipboard();
+
+        [DllImport("user32.dll")]
+        static extern IntPtr SetClipboardData(uint uFormat, IntPtr hMem);
+
         private delegate IntPtr LowLevelHookProc(int nCode, IntPtr wParam, IntPtr lParam);
         private LowLevelHookProc mouseDelegate = null;
         private LowLevelHookProc keyboardDelegate = null;
@@ -149,12 +173,16 @@ namespace ElegantRecorder
             keyboardDelegate = new LowLevelHookProc(KeyboardHookCallback);
 
             keyboardHookID = SetWindowsHookEx(WH_KEYBOARD_LL, keyboardDelegate, GetModuleHandle(moduleName), 0);
+
+            AddClipboardFormatListener(App.Handle);
         }
 
         public void UninstallHooks()
         {
             UnhookWindowsHookEx(mouseHookID);
             UnhookWindowsHookEx(keyboardHookID);
+
+            RemoveClipboardFormatListener(App.Handle);
         }
 
         private IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
@@ -237,7 +265,7 @@ namespace ElegantRecorder
             return false;
         }
 
-        public void MouseClick(int x, int y, uint flags, uint extraInfo)
+        public void MouseClick(int x, int y, uint flags, UIntPtr extraInfo)
         {
             int dx = x * 65535 / screenBounds.Width + 1;
             int dy = y * 65535 / screenBounds.Height + 1;
@@ -259,7 +287,7 @@ namespace ElegantRecorder
             }
         }
 
-        public void MouseMove(int x, int y, uint extraInfo)
+        public void MouseMove(int x, int y, UIntPtr extraInfo)
         {
             //todo - refactor repeatable code
             int dx = x * 65535 / screenBounds.Width + 1;
@@ -268,12 +296,12 @@ namespace ElegantRecorder
             mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, dx, dy, 0, extraInfo);
         }
 
-        public void MouseWheel(int mouseData, uint extraInfo)
+        public void MouseWheel(int mouseData, UIntPtr extraInfo)
         {
             mouse_event(MOUSEEVENTF_WHEEL, 0, 0, mouseData, extraInfo);
         }
 
-        public void KeyPress(uint vKeyCode, uint scanCode, uint flags, uint extraInfo)
+        public void KeyPress(uint vKeyCode, uint scanCode, uint flags, UIntPtr extraInfo)
         {
             keybd_event(vKeyCode, scanCode, flags, extraInfo);
         }
@@ -317,6 +345,36 @@ namespace ElegantRecorder
             GetWindowRect(hwnd, out rect);
 
             return new Rect { X = rect.Left, Y = rect.Top, Width = rect.Right, Height = rect.Bottom };
+        }
+
+        public bool ProcessClipboardMessage(int message, ref string clipboardText)
+        {
+            if (message == WM_CLIPBOARDUPDATE)
+            {
+                IDataObject iData = Clipboard.GetDataObject();
+
+                if (iData.GetDataPresent(DataFormats.Text))
+                {
+                    clipboardText = (string)iData.GetData(DataFormats.Text);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public void SetClipboardText(string text)
+        {
+            string nullTerminatedStr = text + "\0";
+
+            byte[] strBytes = Encoding.Unicode.GetBytes(nullTerminatedStr);
+            IntPtr hglobal = Marshal.AllocHGlobal(strBytes.Length);
+            Marshal.Copy(strBytes, 0, hglobal, strBytes.Length);
+            OpenClipboard(IntPtr.Zero);
+            EmptyClipboard();
+            SetClipboardData(CF_UNICODETEXT, hglobal);
+            CloseClipboard();
+            Marshal.FreeHGlobal(hglobal);
         }
     }
 }

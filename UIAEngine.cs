@@ -276,7 +276,7 @@ namespace ElegantRecorder
                 uiAction.OffsetX = (int)(point.X - boundingRect.X);
                 uiAction.OffsetY = (int)(point.Y - boundingRect.Y);
                 uiAction.Level = level;
-                uiAction.ExtraInfo = (int)currentMouseHookStruct.dwExtraInfo;
+                uiAction.ExtraInfo = (long)currentMouseHookStruct.dwExtraInfo;
                 uiAction.Flags = (int)currentMouseHookStruct.flags;
 
                 // performance hit
@@ -324,7 +324,7 @@ namespace ElegantRecorder
                 }
             }
 
-            App.WinAPI.MouseClick((int)x, (int)y, (uint)action.Flags, (uint)action.ExtraInfo);
+            App.WinAPI.MouseClick((int)x, (int)y, (uint)action.Flags, (UIntPtr)action.ExtraInfo);
 
             return true;
         }

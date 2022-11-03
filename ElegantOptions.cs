@@ -4,17 +4,21 @@
     {
         public string PlaybackSpeed { get; set; }
         public bool RecordMouseMove { get; set; }
+        public bool RecordClipboard { get; set; }
         public bool RestrictToExe { get; set; }
         public string ExePath { get; set; }
         public string RecordingPath { get; set; }
+        public string AutomationEngine { get; set; }
 
         public ElegantOptions()
         {
             PlaybackSpeed = "Normal";
             RecordMouseMove = false;
+            RecordClipboard = false;
             RestrictToExe = false;
             ExePath = "";
             RecordingPath = System.Windows.Forms.Application.StartupPath + "ElegantRecording.json";
+            AutomationEngine = "Win32";
         }
 
         public double GetPlaybackSpeedDuration(double initialDuration)

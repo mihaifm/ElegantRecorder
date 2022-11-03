@@ -30,11 +30,20 @@ namespace ElegantRecorder
 
             string topLevelWindowName = App.WinAPI.GetWindowName(topLevelWindow);
 
+            /*
             if (topLevelWindowName.Length == 0)
             {
-                topLevelWindow = process.MainWindowHandle;
-                topLevelWindowName = process.MainWindowTitle;
+                if (lastNamedWindow != IntPtr.Zero)
+                {
+                    topLevelWindow = lastNamedWindow;
+                    topLevelWindowName = App.WinAPI.GetWindowName(topLevelWindow);
+                }
             }
+            else
+            {
+                lastNamedWindow = topLevelWindow;
+            }
+            */
 
             if (App.ElegantOptions.RestrictToExe)
             {
@@ -48,13 +57,19 @@ namespace ElegantRecorder
                     return false;
             }
 
-            Rect boundingRect = App.WinAPI.GetBoundingRect(topLevelWindow);
+            Rect boundingRect;
+
+            if (topLevelWindowName.Length != 0)
+                boundingRect = App.WinAPI.GetBoundingRect(topLevelWindow);
+            else
+                boundingRect = new Rect(0, 0, 0, 0);
+
 
             uiAction.EventType = "click";
             uiAction.TopLevelWindow = topLevelWindowName;
             uiAction.OffsetX = (int)(point.X - boundingRect.X);
             uiAction.OffsetY = (int)(point.Y - boundingRect.Y);
-            uiAction.ExtraInfo = (int)currentMouseHookStruct.dwExtraInfo;
+            uiAction.ExtraInfo = (long)currentMouseHookStruct.dwExtraInfo;
             uiAction.Flags = (int)currentMouseHookStruct.flags;
 
             return true;
@@ -83,7 +98,7 @@ namespace ElegantRecorder
             var x = (int)windowRect.X + action.OffsetX;
             var y = (int)windowRect.Y + action.OffsetY;
 
-            App.WinAPI.MouseClick((int)x, (int)y, (uint)action.Flags, (uint)action.ExtraInfo);
+            App.WinAPI.MouseClick((int)x, (int)y, (uint)action.Flags, (UIntPtr)action.ExtraInfo);
 
             return true;
         }
