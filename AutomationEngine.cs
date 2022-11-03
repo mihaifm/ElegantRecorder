@@ -1,6 +1,6 @@
-﻿using Microsoft.VisualBasic.FileIO;
-using System;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace ElegantRecorder
 {
@@ -22,6 +22,14 @@ namespace ElegantRecorder
             uiAction.OffsetY = currentMouseHookStruct.pt.y;
             uiAction.ExtraInfo = (long)currentMouseHookStruct.dwExtraInfo;
             uiAction.Flags = currentMouseHookStruct.flags;
+
+            return true;
+        }
+
+        public virtual bool FillMousePathAction(ref UIAction uiAction, ref string status, List<MoveData> moveData)
+        {
+            uiAction.EventType = "mousepath";
+            uiAction.MoveData = moveData.ToArray();
 
             return true;
         }
@@ -58,6 +66,17 @@ namespace ElegantRecorder
         public virtual bool ReplayMouseMoveAction(UIAction action, ref string status)
         {
             App.WinAPI.MouseMove((int)action.OffsetX, (int)action.OffsetY, (UIntPtr)action.ExtraInfo);
+            return true;
+        }
+
+        public virtual bool ReplayMousePathAction(UIAction action, ref string status)
+        {
+            foreach(var m in action.MoveData)
+            {
+                App.WinAPI.MouseMove(m.X, m.Y, UIntPtr.Zero);
+                Thread.Sleep((int)App.ElegantOptions.GetPlaybackSpeedDuration(m.T));
+            }
+
             return true;
         }
 

@@ -2,6 +2,18 @@
 
 namespace ElegantRecorder
 {
+    public struct MoveData
+    {
+        [JsonPropertyName("x")]
+        public int X { get; set; }
+
+        [JsonPropertyName("y")]
+        public int Y { get; set; }
+
+        [JsonPropertyName("t")]
+        public int T { get; set; }
+    }
+
     public class UIAction
     {
         [JsonPropertyName("event")]
@@ -46,10 +58,13 @@ namespace ElegantRecorder
         [JsonPropertyName("tdata")]
         public string? TextData { get; set; }
 
+        [JsonPropertyName("move")]
+        public MoveData[]? MoveData { get; set; }
+
         [JsonPropertyName("einfo")]
         public long? ExtraInfo { get; set; }
 
         [JsonPropertyName("t")]
-        public double elapsed { get; set; }
+        public double? elapsed { get; set; }
     }
 }

@@ -180,6 +180,42 @@ namespace ElegantRecorder
             buttonPause.Image = Resources.pause_fill;
         }
 
+        private void CompressMoveData()
+        {
+            List<MoveData> moveData = new List<MoveData>();
+
+            for (int i = uiSteps.Count - 1; i >= 0; i--)
+            {
+                if (uiSteps[i].EventType == "mousemove")
+                {
+                    moveData.Insert(0, new MoveData { X = (int) uiSteps[i].OffsetX, Y = (int) uiSteps[i].OffsetY, T = (int) uiSteps[i].elapsed });
+                    uiSteps.RemoveAt(i);
+                }
+                else
+                {
+                    if (moveData.Count != 0)
+                    {
+                        var uiAction = new UIAction();
+                        AutomationEngine.FillMousePathAction(ref uiAction, ref status, moveData);
+
+                        uiSteps.Insert(i+1, uiAction);
+
+                        moveData.Clear();
+                    }
+                }
+            }
+
+            if (moveData.Count != 0)
+            {
+                var uiAction = new UIAction();
+                AutomationEngine.FillMousePathAction(ref uiAction, ref status, moveData);
+
+                uiSteps.Insert(0, uiAction);
+
+                moveData.Clear();
+            }
+        }
+
         private void buttonRecord_Click(object sender, EventArgs e)
         {
             if (recording || replaying)
@@ -246,6 +282,8 @@ namespace ElegantRecorder
 
             if (recording)
             {
+                CompressMoveData();
+
                 File.WriteAllText(ElegantOptions.RecordingPath, "[\n");
 
                 JsonSerializerOptions jsonOptions = new()
@@ -323,7 +361,10 @@ namespace ElegantRecorder
 
                 currentActionIndex = i;
 
-                Thread.Sleep((int)ElegantOptions.GetPlaybackSpeedDuration(action.elapsed));
+                if (action.elapsed != null)
+                {
+                    Thread.Sleep((int)ElegantOptions.GetPlaybackSpeedDuration((double)action.elapsed));
+                }
 
                 try
                 {
@@ -354,6 +395,10 @@ namespace ElegantRecorder
                 else if (action.EventType == "clipboard")
                 {
                     AutomationEngine.ReplayClipboardAction(action, ref status);
+                }
+                else if (action.EventType == "mousepath")
+                {
+                    AutomationEngine.ReplayMousePathAction(action, ref status);
                 }
             }
 
