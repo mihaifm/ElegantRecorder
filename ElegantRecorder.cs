@@ -25,6 +25,9 @@ namespace ElegantRecorder
 
         List<UIAction> uiSteps = new List<UIAction>();
 
+        public int recordHotkeyId = 1;
+        public int stopHotkeyId = 2;
+
         public ElegantRecorder()
         {
             InitializeComponent();
@@ -45,6 +48,8 @@ namespace ElegantRecorder
             {
                 AutomationEngine = new UIAEngine(this);
             }
+
+            WinAPI.RegisterGlobalHotkeys();
         }
 
         private void ReadOrCreateConfig()
@@ -216,7 +221,32 @@ namespace ElegantRecorder
             }
         }
 
+        private void CleanResidualKeys()
+        {
+            //prevent keys remaining pressed at the end of the recording
+
+            for (int i = uiSteps.Count - 1; i >= 0; i--)
+            {
+                if (uiSteps[i].EventType == "keypress")
+                {
+                    if (WinAPI.isKeyUp((int)uiSteps[i].Flags))
+                        break;
+                    else
+                        uiSteps.RemoveAt(i);
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
         private void buttonRecord_Click(object sender, EventArgs e)
+        {
+            Record();
+        }
+
+        public void Record()
         {
             if (recording || replaying)
                 return;
@@ -229,7 +259,7 @@ namespace ElegantRecorder
             if (ElegantOptions.RecordingPath.Length == 0)
             {
                 labelStatus.Text = "Specify recording file";
-                
+
                 return;
             }
 
@@ -269,7 +299,7 @@ namespace ElegantRecorder
             Stop(false);
         }
 
-        private void Stop(bool paused)
+        public void Stop(bool paused)
         {
             WinAPI.UninstallHooks();
 
@@ -283,6 +313,7 @@ namespace ElegantRecorder
             if (recording)
             {
                 CompressMoveData();
+                CleanResidualKeys();
 
                 File.WriteAllText(ElegantOptions.RecordingPath, "[\n");
 
@@ -432,29 +463,33 @@ namespace ElegantRecorder
 
         protected override void WndProc(ref Message m)
         {
-            if (!ElegantOptions.RecordClipboard)
+            if (ElegantOptions.RecordClipboard)
             {
-                base.WndProc(ref m);
-                return;
-            }
+                string clipboardText = "";
 
-            string clipboardText = "";
+                if (WinAPI.ProcessClipboardMessage(m.Msg, ref clipboardText))
+                {
+                    UIAction uiAction = new UIAction();
 
-            if (WinAPI.ProcessClipboardMessage(m.Msg, ref clipboardText))
-            {
-                UIAction uiAction = new UIAction();
+                    AutomationEngine.FillClipboardAction(ref uiAction, ref status, clipboardText);
 
-                AutomationEngine.FillClipboardAction(ref uiAction, ref status, clipboardText);
+                    uiAction.elapsed = stopwatch.Elapsed.TotalMilliseconds;
 
-                uiAction.elapsed = stopwatch.Elapsed.TotalMilliseconds;
+                    uiSteps.Add(uiAction);
 
-                uiSteps.Add(uiAction);
-
-                stopwatch.Reset();
-                stopwatch.Start();
+                    stopwatch.Reset();
+                    stopwatch.Start();
+                }
             }
 
             base.WndProc(ref m);
+
+            WinAPI.ProcessHotkeyMessage(ref m);
+        }
+
+        private void ElegantRecorder_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            WinAPI.UnregisterGlobalHotkeys();
         }
     }
 }

@@ -132,6 +132,7 @@ namespace ElegantRecorder
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ElegantRecorder";
             this.Text = "Elegant Recorder";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ElegantRecorder_FormClosing);
             this.ResumeLayout(false);
             this.PerformLayout();
 

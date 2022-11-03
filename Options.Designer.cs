@@ -39,6 +39,10 @@ namespace ElegantRecorder
             this.textBoxExePath = new System.Windows.Forms.TextBox();
             this.buttonBrowseExe = new System.Windows.Forms.Button();
             this.groupBoxGeneral = new System.Windows.Forms.GroupBox();
+            this.textBoxStopHotkey = new System.Windows.Forms.TextBox();
+            this.label6 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
+            this.textBoxRecordHotkey = new System.Windows.Forms.TextBox();
             this.checkBoxRecClipboard = new System.Windows.Forms.CheckBox();
             this.label2 = new System.Windows.Forms.Label();
             this.comboBoxSpeed = new System.Windows.Forms.ComboBox();
@@ -55,7 +59,7 @@ namespace ElegantRecorder
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(26, 155);
+            this.label1.Location = new System.Drawing.Point(26, 188);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(80, 15);
             this.label1.TabIndex = 0;
@@ -64,7 +68,7 @@ namespace ElegantRecorder
             // buttonOk
             // 
             this.buttonOk.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonOk.Location = new System.Drawing.Point(426, 263);
+            this.buttonOk.Location = new System.Drawing.Point(426, 302);
             this.buttonOk.Name = "buttonOk";
             this.buttonOk.Size = new System.Drawing.Size(75, 23);
             this.buttonOk.TabIndex = 2;
@@ -75,7 +79,7 @@ namespace ElegantRecorder
             // buttonCancel
             // 
             this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonCancel.Location = new System.Drawing.Point(507, 263);
+            this.buttonCancel.Location = new System.Drawing.Point(507, 302);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
             this.buttonCancel.TabIndex = 3;
@@ -87,7 +91,7 @@ namespace ElegantRecorder
             // 
             this.textBoxRecordingPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBoxRecordingPath.Location = new System.Drawing.Point(112, 151);
+            this.textBoxRecordingPath.Location = new System.Drawing.Point(112, 184);
             this.textBoxRecordingPath.Name = "textBoxRecordingPath";
             this.textBoxRecordingPath.Size = new System.Drawing.Size(388, 23);
             this.textBoxRecordingPath.TabIndex = 4;
@@ -95,7 +99,7 @@ namespace ElegantRecorder
             // buttonBrowseScript
             // 
             this.buttonBrowseScript.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonBrowseScript.Location = new System.Drawing.Point(506, 151);
+            this.buttonBrowseScript.Location = new System.Drawing.Point(506, 184);
             this.buttonBrowseScript.Name = "buttonBrowseScript";
             this.buttonBrowseScript.Size = new System.Drawing.Size(59, 23);
             this.buttonBrowseScript.TabIndex = 5;
@@ -106,7 +110,7 @@ namespace ElegantRecorder
             // checkBoxRestrictToExe
             // 
             this.checkBoxRestrictToExe.AutoSize = true;
-            this.checkBoxRestrictToExe.Location = new System.Drawing.Point(6, 109);
+            this.checkBoxRestrictToExe.Location = new System.Drawing.Point(6, 153);
             this.checkBoxRestrictToExe.Name = "checkBoxRestrictToExe";
             this.checkBoxRestrictToExe.Size = new System.Drawing.Size(100, 19);
             this.checkBoxRestrictToExe.TabIndex = 6;
@@ -116,14 +120,14 @@ namespace ElegantRecorder
             // 
             // textBoxExePath
             // 
-            this.textBoxExePath.Location = new System.Drawing.Point(112, 107);
+            this.textBoxExePath.Location = new System.Drawing.Point(112, 151);
             this.textBoxExePath.Name = "textBoxExePath";
             this.textBoxExePath.Size = new System.Drawing.Size(388, 23);
             this.textBoxExePath.TabIndex = 7;
             // 
             // buttonBrowseExe
             // 
-            this.buttonBrowseExe.Location = new System.Drawing.Point(505, 106);
+            this.buttonBrowseExe.Location = new System.Drawing.Point(505, 150);
             this.buttonBrowseExe.Name = "buttonBrowseExe";
             this.buttonBrowseExe.Size = new System.Drawing.Size(59, 23);
             this.buttonBrowseExe.TabIndex = 8;
@@ -133,6 +137,10 @@ namespace ElegantRecorder
             // 
             // groupBoxGeneral
             // 
+            this.groupBoxGeneral.Controls.Add(this.textBoxStopHotkey);
+            this.groupBoxGeneral.Controls.Add(this.label6);
+            this.groupBoxGeneral.Controls.Add(this.label5);
+            this.groupBoxGeneral.Controls.Add(this.textBoxRecordHotkey);
             this.groupBoxGeneral.Controls.Add(this.checkBoxRecClipboard);
             this.groupBoxGeneral.Controls.Add(this.label2);
             this.groupBoxGeneral.Controls.Add(this.comboBoxSpeed);
@@ -145,15 +153,51 @@ namespace ElegantRecorder
             this.groupBoxGeneral.Controls.Add(this.checkBoxRestrictToExe);
             this.groupBoxGeneral.Location = new System.Drawing.Point(12, 12);
             this.groupBoxGeneral.Name = "groupBoxGeneral";
-            this.groupBoxGeneral.Size = new System.Drawing.Size(571, 180);
+            this.groupBoxGeneral.Size = new System.Drawing.Size(571, 213);
             this.groupBoxGeneral.TabIndex = 9;
             this.groupBoxGeneral.TabStop = false;
             this.groupBoxGeneral.Text = "General";
             // 
+            // textBoxStopHotkey
+            // 
+            this.textBoxStopHotkey.Location = new System.Drawing.Point(414, 71);
+            this.textBoxStopHotkey.Name = "textBoxStopHotkey";
+            this.textBoxStopHotkey.Size = new System.Drawing.Size(117, 23);
+            this.textBoxStopHotkey.TabIndex = 16;
+            this.textBoxStopHotkey.Enter += new System.EventHandler(this.textBoxStopHotkey_Enter);
+            this.textBoxStopHotkey.Leave += new System.EventHandler(this.textBoxStopHotkey_Leave);
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(274, 74);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(124, 15);
+            this.label6.TabIndex = 15;
+            this.label6.Text = "Stop recording hotkey";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(6, 74);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(124, 15);
+            this.label5.TabIndex = 14;
+            this.label5.Text = "Start recording hotkey";
+            // 
+            // textBoxRecordHotkey
+            // 
+            this.textBoxRecordHotkey.Location = new System.Drawing.Point(136, 71);
+            this.textBoxRecordHotkey.Name = "textBoxRecordHotkey";
+            this.textBoxRecordHotkey.Size = new System.Drawing.Size(122, 23);
+            this.textBoxRecordHotkey.TabIndex = 13;
+            this.textBoxRecordHotkey.Enter += new System.EventHandler(this.textBoxRecordHotkey_Enter);
+            this.textBoxRecordHotkey.Leave += new System.EventHandler(this.textBoxRecordHotkey_Leave);
+            // 
             // checkBoxRecClipboard
             // 
             this.checkBoxRecClipboard.AutoSize = true;
-            this.checkBoxRecClipboard.Location = new System.Drawing.Point(147, 67);
+            this.checkBoxRecClipboard.Location = new System.Drawing.Point(152, 111);
             this.checkBoxRecClipboard.Name = "checkBoxRecClipboard";
             this.checkBoxRecClipboard.Size = new System.Drawing.Size(173, 19);
             this.checkBoxRecClipboard.TabIndex = 12;
@@ -187,7 +231,7 @@ namespace ElegantRecorder
             // checkBoxRecMouseMove
             // 
             this.checkBoxRecMouseMove.AutoSize = true;
-            this.checkBoxRecMouseMove.Location = new System.Drawing.Point(6, 67);
+            this.checkBoxRecMouseMove.Location = new System.Drawing.Point(6, 111);
             this.checkBoxRecMouseMove.Name = "checkBoxRecMouseMove";
             this.checkBoxRecMouseMove.Size = new System.Drawing.Size(135, 19);
             this.checkBoxRecMouseMove.TabIndex = 9;
@@ -201,9 +245,9 @@ namespace ElegantRecorder
             this.groupBoxAdvanced.Controls.Add(this.label4);
             this.groupBoxAdvanced.Controls.Add(this.label3);
             this.groupBoxAdvanced.Controls.Add(this.comboBoxAutomationEngine);
-            this.groupBoxAdvanced.Location = new System.Drawing.Point(12, 198);
+            this.groupBoxAdvanced.Location = new System.Drawing.Point(12, 231);
             this.groupBoxAdvanced.Name = "groupBoxAdvanced";
-            this.groupBoxAdvanced.Size = new System.Drawing.Size(570, 59);
+            this.groupBoxAdvanced.Size = new System.Drawing.Size(570, 65);
             this.groupBoxAdvanced.TabIndex = 10;
             this.groupBoxAdvanced.TabStop = false;
             this.groupBoxAdvanced.Text = "Advanced";
@@ -242,12 +286,13 @@ namespace ElegantRecorder
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(594, 298);
+            this.ClientSize = new System.Drawing.Size(594, 337);
             this.Controls.Add(this.groupBoxAdvanced);
             this.Controls.Add(this.groupBoxGeneral);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.buttonOk);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.KeyPreview = true;
             this.Name = "Options";
             this.Text = "Elegant Recorder Options";
             this.groupBoxGeneral.ResumeLayout(false);
@@ -277,5 +322,9 @@ namespace ElegantRecorder
         private System.Windows.Forms.ComboBox comboBoxAutomationEngine;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.CheckBox checkBoxRecClipboard;
+        private System.Windows.Forms.TextBox textBoxRecordHotkey;
+        private System.Windows.Forms.TextBox textBoxStopHotkey;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Label label5;
     }
 }

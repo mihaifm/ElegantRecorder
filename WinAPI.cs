@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Windows;
+using System.Windows.Forms;
 
 namespace ElegantRecorder
 {
@@ -47,6 +47,15 @@ namespace ElegantRecorder
         GetRootOwner = 3
     }
 
+    public enum KeyModifiers
+    {
+        None = 0,
+        Alt = 1,
+        Control = 2,
+        Shift = 4,
+        Windows = 8
+    }
+
     public class WinAPI
     {
         private ElegantRecorder App;
@@ -79,6 +88,7 @@ namespace ElegantRecorder
         private const int WM_RBUTTONDOWN = 0x0204;
         private const int WM_RBUTTONUP = 0x0205;
         private const int WM_MOUSEMOVE = 0x0200;
+        private const int WM_HOTKEY = 0x0312;
 
         private const int MOUSEEVENTF_MOVE = 0x0001;
         private const int MOUSEEVENTF_ABSOLUTE = 0x8000;
@@ -152,6 +162,12 @@ namespace ElegantRecorder
 
         [DllImport("user32.dll")]
         static extern IntPtr SetClipboardData(uint uFormat, IntPtr hMem);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool RegisterHotKey(IntPtr hWnd, int id, KeyModifiers fsModifiers, Keys vk);
+
+        [DllImport("user32.dll")]
+        private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
         private delegate IntPtr LowLevelHookProc(int nCode, IntPtr wParam, IntPtr lParam);
         private LowLevelHookProc mouseDelegate = null;
@@ -339,12 +355,12 @@ namespace ElegantRecorder
             return (int) pid;
         }
 
-        public Rect GetBoundingRect(IntPtr hwnd)
+        public System.Windows.Rect GetBoundingRect(IntPtr hwnd)
         {
             RECT rect;
             GetWindowRect(hwnd, out rect);
 
-            return new Rect { X = rect.Left, Y = rect.Top, Width = rect.Right, Height = rect.Bottom };
+            return new System.Windows.Rect { X = rect.Left, Y = rect.Top, Width = rect.Right, Height = rect.Bottom };
         }
 
         public bool ProcessClipboardMessage(int message, ref string clipboardText)
@@ -375,6 +391,83 @@ namespace ElegantRecorder
             SetClipboardData(CF_UNICODETEXT, hglobal);
             CloseClipboard();
             Marshal.FreeHGlobal(hglobal);
+        }
+
+        public static void GetModifiers(Keys keydata, out Keys key, out KeyModifiers modifers)
+        {
+            key = keydata;
+            modifers = KeyModifiers.None;
+
+            if ((keydata & Keys.Control) == Keys.Control)
+            {
+                modifers |= KeyModifiers.Control;
+                key = keydata ^ Keys.Control;
+            }
+
+            if ((keydata & Keys.Shift) == Keys.Shift)
+            {
+                modifers |= KeyModifiers.Shift;
+                key = key ^ Keys.Shift;
+            }
+
+            if ((keydata & Keys.Alt) == Keys.Alt)
+            {
+                modifers |= KeyModifiers.Alt;
+                key = key ^ Keys.Alt;
+            }
+
+            if (key == Keys.ShiftKey || key == Keys.ControlKey || key == Keys.Menu)
+            {
+                key = Keys.None;
+            }
+        }
+
+        public void RegisterGlobalHotkeys()
+        {
+            if (App.ElegantOptions.RecordHotkey != 0)
+            {
+                GetModifiers((Keys) App.ElegantOptions.RecordHotkey, out var key, out var modifiers);
+                RegisterHotKey(App.Handle, App.recordHotkeyId, modifiers, key);
+            }
+
+            if (App.ElegantOptions.StopHotkey != 0)
+            {
+                GetModifiers((Keys)App.ElegantOptions.StopHotkey, out var key, out var modifiers);
+                RegisterHotKey(App.Handle, App.stopHotkeyId, modifiers, key);
+            }
+        }
+
+        public void UnregisterGlobalHotkeys()
+        {
+            UnregisterHotKey(App.Handle, App.recordHotkeyId);
+            UnregisterHotKey(App.Handle, App.stopHotkeyId);
+        }
+
+        public void ProcessHotkeyMessage(ref Message m)
+        {
+            if (m.Msg == WM_HOTKEY)
+            {
+                /*
+                var key = (System.Windows.Forms.Keys)(((int)m.LParam >> 16) & 0xFFFF);
+                var modifier = (System.Windows.Input.ModifierKeys)((int)m.LParam & 0xFFFF);
+                */
+
+                int id = m.WParam.ToInt32();
+
+                if (id == App.recordHotkeyId)
+                {
+                    App.Record();
+                }
+                else if (id == App.stopHotkeyId)
+                {
+                    App.Stop(false);
+                }
+            }
+        }
+
+        public bool isKeyUp(int flags)
+        {
+            return ((flags & KEYEVENTF_KEYUP) == KEYEVENTF_KEYUP);
         }
     }
 }
