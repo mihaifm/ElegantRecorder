@@ -25,6 +25,9 @@ namespace ElegantRecorder
 
         List<UIAction> uiSteps = new List<UIAction>();
 
+        List<Recording> recordings = new List<Recording>();
+        string currentRecordingName = "";
+
         public int recordHotkeyId = 1;
         public int stopHotkeyId = 2;
 
@@ -35,6 +38,7 @@ namespace ElegantRecorder
             labelStatus.Text = "";
 
             ReadOrCreateConfig();
+            ReadCurrentRecordings();
 
             WinAPI = new WinAPI(this);
 
@@ -80,6 +84,21 @@ namespace ElegantRecorder
                 catch (Exception ex)
                 {
                     MessageBox.Show("Failed to create configuration file. " + ex.ToString());
+                }
+            }
+        }
+
+        private void ReadCurrentRecordings()
+        {
+            foreach (var file in Directory.GetFiles(ElegantOptions.DataFolder))
+            {
+                using StreamReader stream = new StreamReader(file);
+                char[] buffer = new char[32];
+                stream.Read(buffer, 0, 32);
+
+                if ((new string(buffer)).Contains(Recording.DefaultTag))
+                {
+                    dataGridViewRecordings.Rows.Add(Path.GetFileNameWithoutExtension(file), "");
                 }
             }
         }
@@ -256,33 +275,11 @@ namespace ElegantRecorder
             buttonRecord.Image = Resources.record_edit;
             recording = true;
 
-            if (ElegantOptions.RecordingPath.Length == 0)
-            {
-                labelStatus.Text = "Specify recording file";
-
-                return;
-            }
-
             if (ElegantOptions.RestrictToExe == true && ElegantOptions.ExePath.Length == 0)
             {
                 labelStatus.Text = "Specify target executable";
                 ResetButtons();
                 return;
-            }
-
-            if (!File.Exists(ElegantOptions.RecordingPath))
-            {
-                try
-                {
-                    var stream = File.Create(ElegantOptions.RecordingPath);
-                    stream.Close();
-                }
-                catch
-                {
-                    labelStatus.Text = "Failed to create script file";
-                    ResetButtons();
-                    return;
-                }
             }
 
             stopwatch.Reset();
@@ -315,7 +312,17 @@ namespace ElegantRecorder
                 CompressMoveData();
                 CleanResidualKeys();
 
-                File.WriteAllText(ElegantOptions.RecordingPath, "[\n");
+                var recordingPath = Path.Combine(ElegantOptions.DataFolder, currentRecordingName + ".json");
+
+                Recording rec = JsonSerializer.Deserialize<Recording>(File.ReadAllText(recordingPath));
+
+                using var stream = new StreamWriter(recordingPath);
+
+                stream.Write("{");
+                stream.Write("\"Tag\":" + JsonSerializer.Serialize(rec.Tag) + ",");
+                stream.Write("\n");
+
+                stream.Write("\"UIActions\": [\n");
 
                 JsonSerializerOptions jsonOptions = new()
                 {
@@ -325,19 +332,11 @@ namespace ElegantRecorder
                 for (int i = 0; i < uiSteps.Count; i++)
                 {
                     string jsonString = JsonSerializer.Serialize(uiSteps[i], jsonOptions);
-                    File.AppendAllText(ElegantOptions.RecordingPath, jsonString);
-
-                    if (i != uiSteps.Count - 1)
-                    {
-                        File.AppendAllText(ElegantOptions.RecordingPath, ",\n");
-                    }
-                    else
-                    {
-                        File.AppendAllText(ElegantOptions.RecordingPath, "\n");
-                    }
+                    stream.Write(jsonString);
+                    stream.Write(i != uiSteps.Count - 1 ? ",\n" : "\n");
                 }
 
-                File.AppendAllText(ElegantOptions.RecordingPath, "]");
+                stream.Write("]}");
             }
 
             ResetButtons();
@@ -374,14 +373,17 @@ namespace ElegantRecorder
             }
             catch (Exception) { }
 
-            labelStatus.Text = status;
+            SetStatus(status);
         }
 
         private int currentActionIndex = 0;
 
         void ReplayWorker()
         {
-            UIAction[] steps = JsonSerializer.Deserialize<UIAction[]>(File.ReadAllText(ElegantOptions.RecordingPath));
+            var recordingPath = Path.Combine(ElegantOptions.DataFolder, currentRecordingName + ".json");
+
+            Recording rec = JsonSerializer.Deserialize<Recording>(File.ReadAllText(recordingPath));
+            UIAction[] steps = rec.UIActions;
 
             if (currentActionIndex >= steps.Length - 1)
                 currentActionIndex = 0;
@@ -490,6 +492,62 @@ namespace ElegantRecorder
         private void ElegantRecorder_FormClosing(object sender, FormClosingEventArgs e)
         {
             WinAPI.UnregisterGlobalHotkeys();
+        }
+
+        bool expanded = true;
+        private void buttonExpand_Click(object sender, EventArgs e)
+        {
+            buttonExpand.Image = expanded ? Resources.double_down : Resources.double_up;
+            expanded = !expanded;
+
+            if (expanded)
+            {
+                this.Height = 350;
+                dataGridViewRecordings.Height = 155;
+            }
+            else
+            {
+                this.Height = 127;
+            }
+        }
+
+        private void buttonAddRec_Click(object sender, EventArgs e)
+        {
+            if (textBoxNewRec.Text.Length > 0)
+            {
+
+                Recording rec = new Recording();
+                rec.Name = textBoxNewRec.Text;
+                rec.Path = Path.Combine(ElegantOptions.DataFolder, rec.Name + ".json");
+
+                if (File.Exists(rec.Path))
+                {
+                    SetStatus("Recording with the same name already exists");
+                    return;
+                }
+
+                dataGridViewRecordings.Rows.Add(textBoxNewRec.Text, "");
+                textBoxNewRec.Text = "";
+
+                try
+                {
+                    File.WriteAllText(rec.Path, JsonSerializer.Serialize(rec));
+                }
+                catch (Exception)
+                {
+                    SetStatus("Failed to create recording file");
+                }
+            }
+        }
+
+        private void dataGridViewRecordings_SelectionChanged(object sender, EventArgs e)
+        {
+            currentRecordingName = dataGridViewRecordings.CurrentRow.Cells[0].Value as string;
+        }
+
+        private void SetStatus(string status)
+        {
+            labelStatus.Text = status;
         }
     }
 }

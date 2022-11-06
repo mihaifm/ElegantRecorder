@@ -33,7 +33,7 @@ namespace ElegantRecorder
             this.label1 = new System.Windows.Forms.Label();
             this.buttonOk = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
-            this.textBoxRecordingPath = new System.Windows.Forms.TextBox();
+            this.textBoxDataFolder = new System.Windows.Forms.TextBox();
             this.buttonBrowseScript = new System.Windows.Forms.Button();
             this.checkBoxRestrictToExe = new System.Windows.Forms.CheckBox();
             this.textBoxExePath = new System.Windows.Forms.TextBox();
@@ -61,9 +61,9 @@ namespace ElegantRecorder
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(26, 188);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(80, 15);
+            this.label1.Size = new System.Drawing.Size(65, 15);
             this.label1.TabIndex = 0;
-            this.label1.Text = "Recording file";
+            this.label1.Text = "Data folder";
             // 
             // buttonOk
             // 
@@ -87,14 +87,14 @@ namespace ElegantRecorder
             this.buttonCancel.UseVisualStyleBackColor = true;
             this.buttonCancel.Click += new System.EventHandler(this.buttonCancel_Click);
             // 
-            // textBoxRecordingPath
+            // textBoxDataFolder
             // 
-            this.textBoxRecordingPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            this.textBoxDataFolder.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBoxRecordingPath.Location = new System.Drawing.Point(112, 184);
-            this.textBoxRecordingPath.Name = "textBoxRecordingPath";
-            this.textBoxRecordingPath.Size = new System.Drawing.Size(388, 23);
-            this.textBoxRecordingPath.TabIndex = 4;
+            this.textBoxDataFolder.Location = new System.Drawing.Point(112, 184);
+            this.textBoxDataFolder.Name = "textBoxDataFolder";
+            this.textBoxDataFolder.Size = new System.Drawing.Size(388, 23);
+            this.textBoxDataFolder.TabIndex = 4;
             // 
             // buttonBrowseScript
             // 
@@ -147,7 +147,7 @@ namespace ElegantRecorder
             this.groupBoxGeneral.Controls.Add(this.checkBoxRecMouseMove);
             this.groupBoxGeneral.Controls.Add(this.label1);
             this.groupBoxGeneral.Controls.Add(this.buttonBrowseExe);
-            this.groupBoxGeneral.Controls.Add(this.textBoxRecordingPath);
+            this.groupBoxGeneral.Controls.Add(this.textBoxDataFolder);
             this.groupBoxGeneral.Controls.Add(this.textBoxExePath);
             this.groupBoxGeneral.Controls.Add(this.buttonBrowseScript);
             this.groupBoxGeneral.Controls.Add(this.checkBoxRestrictToExe);
@@ -308,7 +308,7 @@ namespace ElegantRecorder
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button buttonOk;
         private System.Windows.Forms.Button buttonCancel;
-        private System.Windows.Forms.TextBox textBoxRecordingPath;
+        private System.Windows.Forms.TextBox textBoxDataFolder;
         private System.Windows.Forms.Button buttonBrowseScript;
         private System.Windows.Forms.CheckBox checkBoxRestrictToExe;
         private System.Windows.Forms.TextBox textBoxExePath;

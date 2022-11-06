@@ -25,7 +25,7 @@ namespace ElegantRecorder
             checkBoxRecClipboard.Checked = elegantOptions.RecordClipboard;
             checkBoxRestrictToExe.Checked = elegantOptions.RestrictToExe;
             textBoxExePath.Text = elegantOptions.ExePath;
-            textBoxRecordingPath.Text = elegantOptions.RecordingPath;
+            textBoxDataFolder.Text = elegantOptions.DataFolder;
             comboBoxAutomationEngine.SelectedItem = elegantOptions.AutomationEngine;
 
             textBoxRecordHotkey.Text = string.Join("+", ((Keys) elegantOptions.RecordHotkey).ToString().Split(", ").Reverse());
@@ -46,7 +46,7 @@ namespace ElegantRecorder
             elegantOptions.RecordClipboard = checkBoxRecClipboard.Checked;
             elegantOptions.RestrictToExe = checkBoxRestrictToExe.Checked;
             elegantOptions.ExePath = textBoxExePath.Text;
-            elegantOptions.RecordingPath = textBoxRecordingPath.Text;
+            elegantOptions.DataFolder = textBoxDataFolder.Text;
             elegantOptions.AutomationEngine = comboBoxAutomationEngine.SelectedItem as string;
 
             elegantOptions.RecordHotkey = recordHotkeyData;
@@ -80,12 +80,11 @@ namespace ElegantRecorder
 
         private void buttonBrowseScript_Click(object sender, EventArgs e)
         {
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
+            var dialog = new FolderBrowserDialog();
 
             if (dialog.ShowDialog() == DialogResult.OK)
             {
-                textBoxRecordingPath.Text = dialog.FileName;
+                textBoxDataFolder.Text = dialog.SelectedPath;
             }
         }
 
