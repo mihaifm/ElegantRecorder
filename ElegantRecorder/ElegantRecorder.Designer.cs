@@ -165,6 +165,7 @@ namespace ElegantRecorder
             this.dataGridViewRecordings.DefaultCellStyle = dataGridViewCellStyle1;
             this.dataGridViewRecordings.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically;
             this.dataGridViewRecordings.Location = new System.Drawing.Point(12, 120);
+            this.dataGridViewRecordings.MultiSelect = false;
             this.dataGridViewRecordings.Name = "dataGridViewRecordings";
             this.dataGridViewRecordings.RowHeadersVisible = false;
             this.dataGridViewRecordings.RowTemplate.Height = 25;
@@ -172,6 +173,7 @@ namespace ElegantRecorder
             this.dataGridViewRecordings.Size = new System.Drawing.Size(415, 162);
             this.dataGridViewRecordings.TabIndex = 18;
             this.dataGridViewRecordings.SelectionChanged += new System.EventHandler(this.dataGridViewRecordings_SelectionChanged);
+            this.dataGridViewRecordings.KeyDown += new System.Windows.Forms.KeyEventHandler(this.dataGridViewRecordings_KeyDown);
             // 
             // Recordings
             // 
@@ -196,6 +198,7 @@ namespace ElegantRecorder
             this.textBoxNewRec.PlaceholderText = " New...";
             this.textBoxNewRec.Size = new System.Drawing.Size(357, 29);
             this.textBoxNewRec.TabIndex = 19;
+            this.textBoxNewRec.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBoxNewRec_KeyDown);
             // 
             // buttonAddRec
             // 
@@ -228,6 +231,7 @@ namespace ElegantRecorder
             this.Name = "ElegantRecorder";
             this.Text = "Elegant Recorder";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ElegantRecorder_FormClosing);
+            this.Resize += new System.EventHandler(this.ElegantRecorder_Resize);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRecordings)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

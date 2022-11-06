@@ -54,6 +54,21 @@ namespace ElegantRecorder
             }
 
             WinAPI.RegisterGlobalHotkeys();
+
+            ExpandUI();
+
+            dataGridViewRecordings.Sort(new RowComparer(this));
+        }
+
+        private void SetStatus(string status)
+        {
+            labelStatus.Text = status;
+        }
+
+        private void ClearStatus()
+        {
+            status = "";
+            labelStatus.Text = status;
         }
 
         private void ReadOrCreateConfig()
@@ -90,6 +105,8 @@ namespace ElegantRecorder
 
         private void ReadCurrentRecordings()
         {
+            dataGridViewRecordings.Rows.Clear();
+
             foreach (var file in Directory.GetFiles(ElegantOptions.DataFolder))
             {
                 using StreamReader stream = new StreamReader(file);
@@ -110,7 +127,7 @@ namespace ElegantRecorder
             if (!ElegantOptions.RecordMouseMove)
                 return;
 
-            if (stopwatch.ElapsedMilliseconds < mouseMoveThreshold && uiSteps.Count > 0)
+            if (stopwatch.IsRunning && stopwatch.ElapsedMilliseconds < mouseMoveThreshold && uiSteps.Count > 0)
                 return;
 
             UIAction uiAction = new UIAction();
@@ -271,13 +288,20 @@ namespace ElegantRecorder
                 return;
 
             ResetButtons();
+            ClearStatus();
 
             buttonRecord.Image = Resources.record_edit;
             recording = true;
 
+            if (currentRecordingName.Length == 0)
+            {
+                SetStatus("Add a new recording first");
+                ResetButtons();
+                return;
+            }
             if (ElegantOptions.RestrictToExe == true && ElegantOptions.ExePath.Length == 0)
             {
-                labelStatus.Text = "Specify target executable";
+                SetStatus("Specify target executable");
                 ResetButtons();
                 return;
             }
@@ -307,6 +331,8 @@ namespace ElegantRecorder
                 tokenSource.Cancel();
             }
 
+            ClearStatus();
+
             if (recording)
             {
                 CompressMoveData();
@@ -314,29 +340,36 @@ namespace ElegantRecorder
 
                 var recordingPath = Path.Combine(ElegantOptions.DataFolder, currentRecordingName + ".json");
 
-                Recording rec = JsonSerializer.Deserialize<Recording>(File.ReadAllText(recordingPath));
-
-                using var stream = new StreamWriter(recordingPath);
-
-                stream.Write("{");
-                stream.Write("\"Tag\":" + JsonSerializer.Serialize(rec.Tag) + ",");
-                stream.Write("\n");
-
-                stream.Write("\"UIActions\": [\n");
-
-                JsonSerializerOptions jsonOptions = new()
+                try
                 {
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                };
+                    var rec = JsonSerializer.Deserialize<Recording>(File.ReadAllText(recordingPath));
 
-                for (int i = 0; i < uiSteps.Count; i++)
-                {
-                    string jsonString = JsonSerializer.Serialize(uiSteps[i], jsonOptions);
-                    stream.Write(jsonString);
-                    stream.Write(i != uiSteps.Count - 1 ? ",\n" : "\n");
+                    using var stream = new StreamWriter(recordingPath);
+
+                    stream.Write("{");
+                    stream.Write("\"Tag\":" + JsonSerializer.Serialize(rec.Tag) + ",");
+                    stream.Write("\n");
+
+                    stream.Write("\"UIActions\": [\n");
+
+                    JsonSerializerOptions jsonOptions = new()
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+
+                    for (int i = 0; i < uiSteps.Count; i++)
+                    {
+                        string jsonString = JsonSerializer.Serialize(uiSteps[i], jsonOptions);
+                        stream.Write(jsonString);
+                        stream.Write(i != uiSteps.Count - 1 ? ",\n" : "\n");
+                    }
+
+                    stream.Write("]}");
                 }
-
-                stream.Write("]}");
+                catch (Exception)
+                {
+                    SetStatus("Invalid recording file, recording not saved!");
+                }
             }
 
             ResetButtons();
@@ -362,8 +395,7 @@ namespace ElegantRecorder
             tokenSource = new CancellationTokenSource();
             token = tokenSource.Token;
 
-            labelStatus.Text = "";
-            status = "";
+            ClearStatus();
 
             var task = Task.Run(ReplayWorker, token);
 
@@ -492,29 +524,42 @@ namespace ElegantRecorder
         private void ElegantRecorder_FormClosing(object sender, FormClosingEventArgs e)
         {
             WinAPI.UnregisterGlobalHotkeys();
+
+            ElegantOptions.Save(ConfigFilePath);
         }
 
-        bool expanded = true;
         private void buttonExpand_Click(object sender, EventArgs e)
         {
-            buttonExpand.Image = expanded ? Resources.double_down : Resources.double_up;
-            expanded = !expanded;
+            ElegantOptions.ExpandedUI = !ElegantOptions.ExpandedUI;
 
-            if (expanded)
+            ExpandUI();
+        }
+
+        private void ExpandUI()
+        {
+            buttonExpand.Image = ElegantOptions.ExpandedUI ? Resources.double_up : Resources.double_down;
+
+            if (ElegantOptions.ExpandedUI)
             {
-                this.Height = 350;
-                dataGridViewRecordings.Height = 155;
+                Height = ElegantOptions.FormHeight;
+                dataGridViewRecordings.Height = ElegantOptions.DataGridHeight;
             }
             else
             {
-                this.Height = 127;
+                Height = ElegantOptions.DefaultFormHeight;
             }
         }
 
         private void buttonAddRec_Click(object sender, EventArgs e)
         {
+            AddRecording();
+        }
+
+        private void AddRecording()
+        {
             if (textBoxNewRec.Text.Length > 0)
             {
+                ClearStatus();
 
                 Recording rec = new Recording();
                 rec.Name = textBoxNewRec.Text;
@@ -526,12 +571,18 @@ namespace ElegantRecorder
                     return;
                 }
 
-                dataGridViewRecordings.Rows.Add(textBoxNewRec.Text, "");
-                textBoxNewRec.Text = "";
-
                 try
                 {
                     File.WriteAllText(rec.Path, JsonSerializer.Serialize(rec));
+
+                    dataGridViewRecordings.Rows.Add(textBoxNewRec.Text, "");
+                    textBoxNewRec.Text = "";
+
+                    dataGridViewRecordings.Sort(new RowComparer(this));
+
+                    dataGridViewRecordings.ClearSelection();
+                    dataGridViewRecordings.CurrentCell = dataGridViewRecordings.Rows[0].Cells[0];
+                    dataGridViewRecordings.Rows[0].Selected = true;
                 }
                 catch (Exception)
                 {
@@ -542,12 +593,66 @@ namespace ElegantRecorder
 
         private void dataGridViewRecordings_SelectionChanged(object sender, EventArgs e)
         {
-            currentRecordingName = dataGridViewRecordings.CurrentRow.Cells[0].Value as string;
+            if (dataGridViewRecordings.SelectedRows.Count > 0)
+                currentRecordingName = dataGridViewRecordings.SelectedRows[0].Cells[0].Value as string;
+            else
+                currentRecordingName = "";
         }
 
-        private void SetStatus(string status)
+        private class RowComparer : System.Collections.IComparer
         {
-            labelStatus.Text = status;
+            private ElegantRecorder parent;
+
+            public RowComparer(ElegantRecorder parent)
+            {
+                this.parent = parent;
+            }
+
+            public int Compare(object x, object y)
+            {
+                var file1 = Path.Combine(parent.ElegantOptions.DataFolder, (x as DataGridViewRow).Cells[0].Value + ".json");
+                var file2 = Path.Combine(parent.ElegantOptions.DataFolder, (y as DataGridViewRow).Cells[0].Value + ".json");
+
+                return File.GetLastWriteTime(file2).CompareTo(File.GetLastWriteTime(file1));
+            }
+        }
+
+        private void dataGridViewRecordings_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Delete)
+            {
+                if (currentRecordingName.Length > 0 && ElegantOptions.ExpandedUI)
+                {
+                    var diag = MessageBox.Show("Delete recording " + currentRecordingName + " ?", "ElegantRecorder - Confirm Delete", MessageBoxButtons.OKCancel);
+
+                    if (diag == DialogResult.OK)
+                    {
+                        var currentFile = Path.Combine(ElegantOptions.DataFolder, currentRecordingName + ".json");
+                        File.Delete(currentFile);
+
+                        ReadCurrentRecordings();
+                    }
+                }
+            }
+        }
+
+        private void textBoxNewRec_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                AddRecording();
+
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void ElegantRecorder_Resize(object sender, EventArgs e)
+        {
+            if (ElegantOptions.ExpandedUI)
+            {
+                ElegantOptions.FormHeight = Height;
+                ElegantOptions.DataGridHeight = dataGridViewRecordings.Height;
+            }
         }
     }
 }

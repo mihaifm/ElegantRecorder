@@ -52,7 +52,7 @@ namespace ElegantRecorder
             elegantOptions.RecordHotkey = recordHotkeyData;
             elegantOptions.StopHotkey = stopHotkeyData;
 
-            File.WriteAllText(elegantRecorder.ConfigFilePath, JsonSerializer.Serialize(elegantOptions));
+            elegantOptions.Save(elegantRecorder.ConfigFilePath);
         }
 
         private void ChangeAutomationEngine()
