@@ -100,7 +100,7 @@ namespace ElegantRecorder
             }
         }
 
-        private void ReadCurrentRecordings()
+        public void ReadCurrentRecordings()
         {
             dataGridViewRecordings.Rows.Clear();
 
@@ -115,6 +115,12 @@ namespace ElegantRecorder
                     dataGridViewRecordings.Rows.Add(Path.GetFileNameWithoutExtension(file), "");
                 }
             }
+
+            dataGridViewRecordings.Sort(new RowComparer(this));
+
+            dataGridViewRecordings.ClearSelection();
+            dataGridViewRecordings.CurrentCell = dataGridViewRecordings.Rows[0].Cells[0];
+            dataGridViewRecordings.Rows[0].Selected = true;
         }
 
         private const int mouseMoveThreshold = 30;
@@ -541,17 +547,22 @@ namespace ElegantRecorder
         {
             if (e.KeyCode == Keys.Delete)
             {
-                if (CurrentRecordingName.Length > 0 && ElegantOptions.ExpandedUI)
+                DeleteRecording();
+            }
+        }
+
+        private void DeleteRecording()
+        {
+            if (CurrentRecordingName.Length > 0 && ElegantOptions.ExpandedUI)
+            {
+                var diag = MessageBox.Show("Delete recording " + CurrentRecordingName + " ?", "ElegantRecorder - Confirm Delete", MessageBoxButtons.OKCancel);
+
+                if (diag == DialogResult.OK)
                 {
-                    var diag = MessageBox.Show("Delete recording " + CurrentRecordingName + " ?", "ElegantRecorder - Confirm Delete", MessageBoxButtons.OKCancel);
+                    var currentFile = Path.Combine(ElegantOptions.DataFolder, CurrentRecordingName + ".json");
+                    File.Delete(currentFile);
 
-                    if (diag == DialogResult.OK)
-                    {
-                        var currentFile = Path.Combine(ElegantOptions.DataFolder, CurrentRecordingName + ".json");
-                        File.Delete(currentFile);
-
-                        ReadCurrentRecordings();
-                    }
+                    ReadCurrentRecordings();
                 }
             }
         }
@@ -573,6 +584,39 @@ namespace ElegantRecorder
                 ElegantOptions.FormHeight = Height;
                 ElegantOptions.DataGridHeight = dataGridViewRecordings.Height;
             }
+        }
+
+        private void dataGridViewRecordings_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                var hti = dataGridViewRecordings.HitTest(e.X, e.Y);
+                dataGridViewRecordings.ClearSelection();
+
+                if (hti.RowIndex < 0)
+                    return;
+
+                dataGridViewRecordings.Rows[hti.RowIndex].Selected = true;
+
+                contextMenuStripRClick.Show(this, new System.Drawing.Point(e.X + ((Control)sender).Left, e.Y + ((Control)sender).Top));
+            }
+        }
+
+        private void refreshToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ReadCurrentRecordings();
+        }
+
+        private void deleteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            DeleteRecording();
+        }
+
+        private void renameToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Options options = new Options(this);
+            options.Show();
+            options.RenameFocus();
         }
     }
 }

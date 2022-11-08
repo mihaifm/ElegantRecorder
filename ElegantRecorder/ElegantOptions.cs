@@ -24,6 +24,8 @@ namespace ElegantRecorder
         public bool RestrictToExe { get; set; }
         [JsonIgnore]
         public string ExePath { get; set; }
+        [JsonIgnore]
+        public string CurrRecName { get; set; }
 
         public ElegantOptions()
         {
@@ -41,6 +43,7 @@ namespace ElegantRecorder
             ExpandedUI = true;
             FormHeight = 350;
             DataGridHeight = 155;
+            CurrRecName = "";
         }
 
         public void Save(string FilePath)

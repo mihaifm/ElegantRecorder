@@ -38,7 +38,33 @@ namespace ElegantRecorder
             RestrictToExe = false;
             ExePath = "";
 
-            FilePath = Path.Combine(App.ElegantOptions.DataFolder, Name + ".json");
+            if (Name.Length > 0)
+                FilePath = Path.Combine(App.ElegantOptions.DataFolder, Name + ".json");
+            else
+                FilePath = "";
+        }
+
+        private void SyncAppOptions(bool direction)
+        {
+            if (direction)
+            {
+                App.ElegantOptions.PlaybackSpeed = PlaybackSpeed;
+                App.ElegantOptions.RestrictToExe = RestrictToExe;
+                App.ElegantOptions.ExePath = ExePath;
+                App.ElegantOptions.CurrRecName = Name;
+            }
+            else
+            {
+                PlaybackSpeed = App.ElegantOptions.PlaybackSpeed;
+                RestrictToExe = App.ElegantOptions.RestrictToExe;
+                ExePath = App.ElegantOptions.ExePath;
+                Name = App.ElegantOptions.CurrRecName;
+
+                if (Name.Length > 0)
+                    FilePath = Path.Combine(App.ElegantOptions.DataFolder, Name + ".json");
+                else
+                    FilePath = "";
+            }
         }
 
         public void Load()
@@ -57,17 +83,25 @@ namespace ElegantRecorder
                         property.SetValue(this, property.GetValue(rec, null), null);
                 }
 
-                App.ElegantOptions.PlaybackSpeed = PlaybackSpeed;
-                App.ElegantOptions.RestrictToExe = RestrictToExe;
-                App.ElegantOptions.ExePath = ExePath;
+                SyncAppOptions(true);
             }
         }
 
         public void Save()
         {
-            PlaybackSpeed = App.ElegantOptions.PlaybackSpeed;
-            RestrictToExe = App.ElegantOptions.RestrictToExe;
-            ExePath = App.ElegantOptions.ExePath;
+            try
+            {
+                Rename();
+            }
+            catch(Exception)
+            {
+                throw;
+            }
+
+            SyncAppOptions(false);
+
+            if (FilePath.Length == 0)
+                return;
 
             try
             {
@@ -99,6 +133,26 @@ namespace ElegantRecorder
                 stream.Write("]}");
             }
             catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        private void Rename()
+        {
+            try
+            {
+                if (Name != App.ElegantOptions.CurrRecName &&
+                    Name != null && Name.Length > 0 &&
+                    App.ElegantOptions.CurrRecName != null && App.ElegantOptions.CurrRecName.Length > 0)
+                {
+                    var path1 = Path.Combine(App.ElegantOptions.DataFolder, Name + ".json");
+                    var path2 = Path.Combine(App.ElegantOptions.DataFolder, App.ElegantOptions.CurrRecName + ".json");
+
+                    File.Move(path1, path2);
+                }
+            }
+            catch
             {
                 throw;
             }

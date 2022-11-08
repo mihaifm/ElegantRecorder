@@ -47,7 +47,12 @@ namespace ElegantRecorder
             this.Indicator = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.textBoxNewRec = new System.Windows.Forms.TextBox();
             this.buttonAddRec = new System.Windows.Forms.Button();
+            this.contextMenuStripRClick = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.refreshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.renameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRecordings)).BeginInit();
+            this.contextMenuStripRClick.SuspendLayout();
             this.SuspendLayout();
             // 
             // labelStatus
@@ -174,6 +179,7 @@ namespace ElegantRecorder
             this.dataGridViewRecordings.TabIndex = 18;
             this.dataGridViewRecordings.SelectionChanged += new System.EventHandler(this.dataGridViewRecordings_SelectionChanged);
             this.dataGridViewRecordings.KeyDown += new System.Windows.Forms.KeyEventHandler(this.dataGridViewRecordings_KeyDown);
+            this.dataGridViewRecordings.MouseDown += new System.Windows.Forms.MouseEventHandler(this.dataGridViewRecordings_MouseDown);
             // 
             // Recordings
             // 
@@ -212,6 +218,36 @@ namespace ElegantRecorder
             this.buttonAddRec.UseVisualStyleBackColor = true;
             this.buttonAddRec.Click += new System.EventHandler(this.buttonAddRec_Click);
             // 
+            // contextMenuStripRClick
+            // 
+            this.contextMenuStripRClick.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.refreshToolStripMenuItem,
+            this.renameToolStripMenuItem,
+            this.deleteToolStripMenuItem});
+            this.contextMenuStripRClick.Name = "contextMenuStripRClick";
+            this.contextMenuStripRClick.Size = new System.Drawing.Size(118, 70);
+            // 
+            // refreshToolStripMenuItem
+            // 
+            this.refreshToolStripMenuItem.Name = "refreshToolStripMenuItem";
+            this.refreshToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
+            this.refreshToolStripMenuItem.Text = "Refresh";
+            this.refreshToolStripMenuItem.Click += new System.EventHandler(this.refreshToolStripMenuItem_Click);
+            // 
+            // renameToolStripMenuItem
+            // 
+            this.renameToolStripMenuItem.Name = "renameToolStripMenuItem";
+            this.renameToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
+            this.renameToolStripMenuItem.Text = "Rename";
+            this.renameToolStripMenuItem.Click += new System.EventHandler(this.renameToolStripMenuItem_Click);
+            // 
+            // deleteToolStripMenuItem
+            // 
+            this.deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
+            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
+            this.deleteToolStripMenuItem.Text = "Delete";
+            this.deleteToolStripMenuItem.Click += new System.EventHandler(this.deleteToolStripMenuItem_Click);
+            // 
             // ElegantRecorder
             // 
             this.BackColor = System.Drawing.SystemColors.Control;
@@ -233,6 +269,7 @@ namespace ElegantRecorder
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ElegantRecorder_FormClosing);
             this.Resize += new System.EventHandler(this.ElegantRecorder_Resize);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRecordings)).EndInit();
+            this.contextMenuStripRClick.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -253,5 +290,9 @@ namespace ElegantRecorder
         private Button buttonAddRec;
         private DataGridViewTextBoxColumn Recordings;
         private DataGridViewTextBoxColumn Indicator;
+        private ContextMenuStrip contextMenuStripRClick;
+        private ToolStripMenuItem refreshToolStripMenuItem;
+        private ToolStripMenuItem renameToolStripMenuItem;
+        private ToolStripMenuItem deleteToolStripMenuItem;
     }
 }

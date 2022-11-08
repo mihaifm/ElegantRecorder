@@ -19,29 +19,27 @@ namespace ElegantRecorder
             InitializeComponent();
 
             App = elegantRecorder;
-            var elegantOptions = App.ElegantOptions;
+            Rec = new Recording(App, App.CurrentRecordingName);
+            Rec.Load();
 
-            checkBoxRecMouseMove.Checked = elegantOptions.RecordMouseMove;
-            checkBoxRecClipboard.Checked = elegantOptions.RecordClipboard;
-            textBoxDataFolder.Text = elegantOptions.DataFolder;
-            comboBoxAutomationEngine.SelectedItem = elegantOptions.AutomationEngine;
+            checkBoxRecMouseMove.Checked = App.ElegantOptions.RecordMouseMove;
+            checkBoxRecClipboard.Checked = App.ElegantOptions.RecordClipboard;
+            textBoxDataFolder.Text = App.ElegantOptions.DataFolder;
+            comboBoxAutomationEngine.SelectedItem = App.ElegantOptions.AutomationEngine;
 
-            textBoxRecordHotkey.Text = string.Join("+", ((Keys) elegantOptions.RecordHotkey).ToString().Split(", ").Reverse());
-            recordHotkeyData = elegantOptions.RecordHotkey;
-            textBoxStopHotkey.Text = string.Join("+", ((Keys)elegantOptions.StopHotkey).ToString().Split(", ").Reverse());
-            stopHotkeyData = elegantOptions.StopHotkey;
+            textBoxRecordHotkey.Text = string.Join("+", ((Keys)App.ElegantOptions.RecordHotkey).ToString().Split(", ").Reverse());
+            recordHotkeyData = App.ElegantOptions.RecordHotkey;
+            textBoxStopHotkey.Text = string.Join("+", ((Keys)App.ElegantOptions.StopHotkey).ToString().Split(", ").Reverse());
+            stopHotkeyData = App.ElegantOptions.StopHotkey;
 
             textBoxExePath.Enabled = checkBoxRestrictToExe.Checked;
             buttonBrowseExe.Enabled = checkBoxRestrictToExe.Checked;
 
-            Rec = new Recording(App, App.CurrentRecordingName);
-            Rec.Load();
+            comboBoxSpeed.SelectedItem = App.ElegantOptions.PlaybackSpeed;
+            checkBoxRestrictToExe.Checked = App.ElegantOptions.RestrictToExe;
+            textBoxExePath.Text = App.ElegantOptions.ExePath;
 
-            comboBoxSpeed.SelectedItem = Rec.PlaybackSpeed;
-            checkBoxRestrictToExe.Checked = Rec.RestrictToExe;
-            textBoxExePath.Text = Rec.ExePath;
-
-            textBoxCurrRecName.Text = Rec.Name;
+            textBoxCurrRecName.Text = App.ElegantOptions.CurrRecName;
         }
 
         public void SaveOptions()
@@ -58,8 +56,12 @@ namespace ElegantRecorder
             App.ElegantOptions.RestrictToExe = checkBoxRestrictToExe.Checked;
             App.ElegantOptions.ExePath = textBoxExePath.Text;
 
+            App.ElegantOptions.CurrRecName = textBoxCurrRecName.Text;
+
             App.ElegantOptions.Save(App.ConfigFilePath);
             Rec.Save();
+
+            App.ReadCurrentRecordings();
         }
 
         private void ChangeAutomationEngine()
@@ -177,6 +179,10 @@ namespace ElegantRecorder
         {
             textBoxStopHotkey.Text = Keys.None.ToString();
             stopHotkeyData = (int)Keys.None;
+        }
+        public void RenameFocus()
+        {
+            textBoxCurrRecName.Focus();
         }
     }
 }
