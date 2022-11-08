@@ -56,6 +56,7 @@ namespace ElegantRecorder
             this.groupBoxCurrentRec = new System.Windows.Forms.GroupBox();
             this.textBoxCurrRecName = new System.Windows.Forms.TextBox();
             this.label7 = new System.Windows.Forms.Label();
+            this.checkBoxEncrypted = new System.Windows.Forms.CheckBox();
             this.groupBoxGeneral.SuspendLayout();
             this.groupBoxAdvanced.SuspendLayout();
             this.groupBoxCurrentRec.SuspendLayout();
@@ -73,7 +74,7 @@ namespace ElegantRecorder
             // buttonOk
             // 
             this.buttonOk.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonOk.Location = new System.Drawing.Point(426, 402);
+            this.buttonOk.Location = new System.Drawing.Point(426, 422);
             this.buttonOk.Name = "buttonOk";
             this.buttonOk.Size = new System.Drawing.Size(75, 23);
             this.buttonOk.TabIndex = 2;
@@ -84,7 +85,7 @@ namespace ElegantRecorder
             // buttonCancel
             // 
             this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonCancel.Location = new System.Drawing.Point(507, 402);
+            this.buttonCancel.Location = new System.Drawing.Point(507, 422);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
             this.buttonCancel.TabIndex = 3;
@@ -112,7 +113,7 @@ namespace ElegantRecorder
             // checkBoxRestrictToExe
             // 
             this.checkBoxRestrictToExe.AutoSize = true;
-            this.checkBoxRestrictToExe.Location = new System.Drawing.Point(16, 82);
+            this.checkBoxRestrictToExe.Location = new System.Drawing.Point(16, 107);
             this.checkBoxRestrictToExe.Name = "checkBoxRestrictToExe";
             this.checkBoxRestrictToExe.Size = new System.Drawing.Size(100, 19);
             this.checkBoxRestrictToExe.TabIndex = 6;
@@ -122,14 +123,14 @@ namespace ElegantRecorder
             // 
             // textBoxExePath
             // 
-            this.textBoxExePath.Location = new System.Drawing.Point(122, 80);
+            this.textBoxExePath.Location = new System.Drawing.Point(122, 105);
             this.textBoxExePath.Name = "textBoxExePath";
             this.textBoxExePath.Size = new System.Drawing.Size(373, 23);
             this.textBoxExePath.TabIndex = 7;
             // 
             // buttonBrowseExe
             // 
-            this.buttonBrowseExe.Location = new System.Drawing.Point(501, 80);
+            this.buttonBrowseExe.Location = new System.Drawing.Point(501, 105);
             this.buttonBrowseExe.Name = "buttonBrowseExe";
             this.buttonBrowseExe.Size = new System.Drawing.Size(59, 23);
             this.buttonBrowseExe.TabIndex = 8;
@@ -303,6 +304,7 @@ namespace ElegantRecorder
             // 
             this.groupBoxCurrentRec.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
+            this.groupBoxCurrentRec.Controls.Add(this.checkBoxEncrypted);
             this.groupBoxCurrentRec.Controls.Add(this.textBoxCurrRecName);
             this.groupBoxCurrentRec.Controls.Add(this.label7);
             this.groupBoxCurrentRec.Controls.Add(this.comboBoxSpeed);
@@ -312,7 +314,7 @@ namespace ElegantRecorder
             this.groupBoxCurrentRec.Controls.Add(this.buttonBrowseExe);
             this.groupBoxCurrentRec.Location = new System.Drawing.Point(12, 275);
             this.groupBoxCurrentRec.Name = "groupBoxCurrentRec";
-            this.groupBoxCurrentRec.Size = new System.Drawing.Size(570, 121);
+            this.groupBoxCurrentRec.Size = new System.Drawing.Size(570, 141);
             this.groupBoxCurrentRec.TabIndex = 11;
             this.groupBoxCurrentRec.TabStop = false;
             this.groupBoxCurrentRec.Text = "Current recording";
@@ -333,11 +335,21 @@ namespace ElegantRecorder
             this.label7.TabIndex = 12;
             this.label7.Text = "Name";
             // 
+            // checkBoxEncrypted
+            // 
+            this.checkBoxEncrypted.AutoSize = true;
+            this.checkBoxEncrypted.Location = new System.Drawing.Point(122, 80);
+            this.checkBoxEncrypted.Name = "checkBoxEncrypted";
+            this.checkBoxEncrypted.Size = new System.Drawing.Size(79, 19);
+            this.checkBoxEncrypted.TabIndex = 14;
+            this.checkBoxEncrypted.Text = "Encrypted";
+            this.checkBoxEncrypted.UseVisualStyleBackColor = true;
+            // 
             // Options
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(594, 437);
+            this.ClientSize = new System.Drawing.Size(594, 457);
             this.Controls.Add(this.groupBoxCurrentRec);
             this.Controls.Add(this.groupBoxAdvanced);
             this.Controls.Add(this.groupBoxGeneral);
@@ -385,5 +397,6 @@ namespace ElegantRecorder
         private System.Windows.Forms.TextBox textBoxCurrRecName;
         private System.Windows.Forms.Button buttonClearRecHotkey;
         private System.Windows.Forms.Button buttonClearStopHotkey;
+        private System.Windows.Forms.CheckBox checkBoxEncrypted;
     }
 }

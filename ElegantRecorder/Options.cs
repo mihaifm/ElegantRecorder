@@ -36,6 +36,7 @@ namespace ElegantRecorder
             buttonBrowseExe.Enabled = checkBoxRestrictToExe.Checked;
 
             comboBoxSpeed.SelectedItem = App.ElegantOptions.PlaybackSpeed;
+            checkBoxEncrypted.Checked = App.ElegantOptions.Encrypted;
             checkBoxRestrictToExe.Checked = App.ElegantOptions.RestrictToExe;
             textBoxExePath.Text = App.ElegantOptions.ExePath;
 
@@ -53,6 +54,7 @@ namespace ElegantRecorder
             App.ElegantOptions.StopHotkey = stopHotkeyData;
 
             App.ElegantOptions.PlaybackSpeed = comboBoxSpeed.SelectedItem as string;
+            App.ElegantOptions.Encrypted = checkBoxEncrypted.Checked;
             App.ElegantOptions.RestrictToExe = checkBoxRestrictToExe.Checked;
             App.ElegantOptions.ExePath = textBoxExePath.Text;
 

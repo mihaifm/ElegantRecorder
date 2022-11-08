@@ -13,6 +13,7 @@ namespace ElegantRecorder
 
         public string Tag { get; set; }
         public string PlaybackSpeed { get; set; }
+        public bool Encrypted { get; set; }
         public bool RestrictToExe { get; set; }
         public string ExePath { get; set; }
         public UIAction[] UIActions { get; set; }
@@ -35,6 +36,7 @@ namespace ElegantRecorder
             Tag = DefaultTag;
 
             PlaybackSpeed = "Normal";
+            Encrypted = false;
             RestrictToExe = false;
             ExePath = "";
 
@@ -49,6 +51,7 @@ namespace ElegantRecorder
             if (direction)
             {
                 App.ElegantOptions.PlaybackSpeed = PlaybackSpeed;
+                App.ElegantOptions.Encrypted = Encrypted;
                 App.ElegantOptions.RestrictToExe = RestrictToExe;
                 App.ElegantOptions.ExePath = ExePath;
                 App.ElegantOptions.CurrRecName = Name;
@@ -56,6 +59,7 @@ namespace ElegantRecorder
             else
             {
                 PlaybackSpeed = App.ElegantOptions.PlaybackSpeed;
+                Encrypted = App.ElegantOptions.Encrypted;
                 RestrictToExe = App.ElegantOptions.RestrictToExe;
                 ExePath = App.ElegantOptions.ExePath;
                 Name = App.ElegantOptions.CurrRecName;
@@ -111,6 +115,7 @@ namespace ElegantRecorder
 
                 stream.Write("\"Tag\":" + JsonSerializer.Serialize(DefaultTag) + ",");
                 stream.Write("\"PlaybackSpeed\":" + JsonSerializer.Serialize(PlaybackSpeed) + ",");
+                stream.Write("\"Encrypted\":" + JsonSerializer.Serialize(Encrypted) + ",");
                 stream.Write("\"RestrictToExe\":" + JsonSerializer.Serialize(RestrictToExe) + ",");
                 stream.Write("\"ExePath\":" + JsonSerializer.Serialize(ExePath) + ",");
 
