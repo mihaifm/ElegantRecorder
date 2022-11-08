@@ -384,16 +384,16 @@ namespace ElegantRecorder
 
         public void SetClipboardText(string text)
         {
-            string nullTerminatedStr = text + "\0";
+            //string nullTerminatedStr = text + "\0";
 
-            byte[] strBytes = Encoding.Unicode.GetBytes(nullTerminatedStr);
-            IntPtr hglobal = Marshal.AllocHGlobal(strBytes.Length);
-            Marshal.Copy(strBytes, 0, hglobal, strBytes.Length);
-            OpenClipboard(IntPtr.Zero);
-            EmptyClipboard();
-            SetClipboardData(CF_UNICODETEXT, hglobal);
-            CloseClipboard();
-            Marshal.FreeHGlobal(hglobal);
+            //byte[] strBytes = Encoding.Unicode.GetBytes(nullTerminatedStr);
+            //IntPtr hglobal = Marshal.AllocHGlobal(strBytes.Length);
+            //Marshal.Copy(strBytes, 0, hglobal, strBytes.Length);
+            //OpenClipboard(IntPtr.Zero);
+            //EmptyClipboard();
+            //SetClipboardData(CF_UNICODETEXT, hglobal);
+            //CloseClipboard();
+            //Marshal.FreeHGlobal(hglobal);
         }
 
         public static void GetModifiers(Keys keydata, out Keys key, out KeyModifiers modifers)

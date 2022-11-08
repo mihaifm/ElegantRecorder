@@ -2,3 +2,4 @@ bin/
 obj/
 .vs/
 notes.txt
+*.csproj.user

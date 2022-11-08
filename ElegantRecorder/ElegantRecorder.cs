@@ -5,7 +5,6 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Windows.Forms;
-using System.Text.Json.Serialization;
 using ElegantRecorder.Properties;
 using System.Threading.Tasks;
 
@@ -175,6 +174,19 @@ namespace ElegantRecorder
             SetStatus(status);
         }
 
+        private void PreRecordClipboard()
+        {
+            if (Clipboard.ContainsText(TextDataFormat.Text))
+            {
+                var uiAction = new UIAction();
+
+                var clipboardText = Clipboard.GetText(TextDataFormat.Text);
+                AutomationEngine.FillClipboardAction(ref uiAction, ref status, clipboardText);
+
+                UISteps.Add(uiAction);
+            }
+        }
+
         public /*async*/ void RecordMouse(MouseHookStruct currentMouseHookStruct, MouseHookStruct prevMouseHookStruct)
         {
             //await System.Threading.Tasks.Task.Run(() => RecordMouseWorker());
@@ -252,6 +264,11 @@ namespace ElegantRecorder
                 SetStatus("Specify target executable");
                 ResetButtons();
                 return;
+            }
+
+            if (ElegantOptions.RecordClipboard)
+            {
+                PreRecordClipboard();
             }
 
             stopwatch.Reset();
