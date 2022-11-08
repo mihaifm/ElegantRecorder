@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ElegantRecorder
 {
@@ -7,21 +8,27 @@ namespace ElegantRecorder
     {
         public static int DefaultFormHeight = 127;
 
-        public string PlaybackSpeed { get; set; }
         public int RecordHotkey { get; set; }
         public int StopHotkey { get; set; }
         public bool RecordMouseMove { get; set; }
         public bool RecordClipboard { get; set; }
-        public bool RestrictToExe { get; set; }
-        public string ExePath { get; set; }
         public string AutomationEngine { get; set; }
         public string DataFolder { get; set; }
         public bool ExpandedUI { get; set; }
         public int FormHeight { get; set; }
         public int DataGridHeight { get; set; }
 
+        [JsonIgnore]
+        public string PlaybackSpeed { get; set; }
+        [JsonIgnore]
+        public bool RestrictToExe { get; set; }
+        [JsonIgnore]
+        public string ExePath { get; set; }
+
         public ElegantOptions()
         {
+            //default options
+
             PlaybackSpeed = "Normal";
             RecordHotkey = 0;
             StopHotkey = 0;
@@ -41,9 +48,9 @@ namespace ElegantRecorder
             File.WriteAllText(FilePath, JsonSerializer.Serialize(this));
         }
 
-        public double GetPlaybackSpeedDuration(double initialDuration)
+        public static double GetPlaybackSpeedDuration(string playbackSpeed, double initialDuration)
         {
-            switch(PlaybackSpeed)
+            switch(playbackSpeed)
             {
                 case "Fastest":
                     return 0;

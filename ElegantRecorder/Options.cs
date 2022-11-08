@@ -8,7 +8,8 @@ namespace ElegantRecorder
 {
     public partial class Options : Form
     {
-        private ElegantRecorder elegantRecorder;
+        private ElegantRecorder App;
+        private Recording Rec;
 
         private int recordHotkeyData = 0;
         private int stopHotkeyData = 0;
@@ -17,14 +18,11 @@ namespace ElegantRecorder
         {
             InitializeComponent();
 
-            this.elegantRecorder = elegantRecorder;
-            var elegantOptions = elegantRecorder.ElegantOptions;
+            App = elegantRecorder;
+            var elegantOptions = App.ElegantOptions;
 
-            comboBoxSpeed.SelectedItem = elegantOptions.PlaybackSpeed;
             checkBoxRecMouseMove.Checked = elegantOptions.RecordMouseMove;
             checkBoxRecClipboard.Checked = elegantOptions.RecordClipboard;
-            checkBoxRestrictToExe.Checked = elegantOptions.RestrictToExe;
-            textBoxExePath.Text = elegantOptions.ExePath;
             textBoxDataFolder.Text = elegantOptions.DataFolder;
             comboBoxAutomationEngine.SelectedItem = elegantOptions.AutomationEngine;
 
@@ -35,47 +33,56 @@ namespace ElegantRecorder
 
             textBoxExePath.Enabled = checkBoxRestrictToExe.Checked;
             buttonBrowseExe.Enabled = checkBoxRestrictToExe.Checked;
+
+            Rec = new Recording(App, App.CurrentRecordingName);
+            Rec.Load();
+
+            comboBoxSpeed.SelectedItem = Rec.PlaybackSpeed;
+            checkBoxRestrictToExe.Checked = Rec.RestrictToExe;
+            textBoxExePath.Text = Rec.ExePath;
+
+            textBoxCurrRecName.Text = Rec.Name;
         }
 
         public void SaveOptions()
         {
-            var elegantOptions = elegantRecorder.ElegantOptions;
+            App.ElegantOptions.RecordMouseMove = checkBoxRecMouseMove.Checked;
+            App.ElegantOptions.RecordClipboard = checkBoxRecClipboard.Checked;
+            App.ElegantOptions.DataFolder = textBoxDataFolder.Text;
+            App.ElegantOptions.AutomationEngine = comboBoxAutomationEngine.SelectedItem as string;
 
-            elegantOptions.PlaybackSpeed = comboBoxSpeed.SelectedItem as string;
-            elegantOptions.RecordMouseMove = checkBoxRecMouseMove.Checked;
-            elegantOptions.RecordClipboard = checkBoxRecClipboard.Checked;
-            elegantOptions.RestrictToExe = checkBoxRestrictToExe.Checked;
-            elegantOptions.ExePath = textBoxExePath.Text;
-            elegantOptions.DataFolder = textBoxDataFolder.Text;
-            elegantOptions.AutomationEngine = comboBoxAutomationEngine.SelectedItem as string;
+            App.ElegantOptions.RecordHotkey = recordHotkeyData;
+            App.ElegantOptions.StopHotkey = stopHotkeyData;
 
-            elegantOptions.RecordHotkey = recordHotkeyData;
-            elegantOptions.StopHotkey = stopHotkeyData;
+            App.ElegantOptions.PlaybackSpeed = comboBoxSpeed.SelectedItem as string;
+            App.ElegantOptions.RestrictToExe = checkBoxRestrictToExe.Checked;
+            App.ElegantOptions.ExePath = textBoxExePath.Text;
 
-            elegantOptions.Save(elegantRecorder.ConfigFilePath);
+            App.ElegantOptions.Save(App.ConfigFilePath);
+            Rec.Save();
         }
 
         private void ChangeAutomationEngine()
         {
             string newAutomationEngine = (string)comboBoxAutomationEngine.SelectedItem;
 
-            if (newAutomationEngine == elegantRecorder.ElegantOptions.AutomationEngine)
+            if (newAutomationEngine == App.ElegantOptions.AutomationEngine)
                 return;
 
             if (newAutomationEngine == "Win32")
             {
-                elegantRecorder.AutomationEngine = new Win32Engine(elegantRecorder);
+                App.AutomationEngine = new Win32Engine(App);
             }
             else if (newAutomationEngine == "UI Automation")
             {
-                elegantRecorder.AutomationEngine = new UIAEngine(elegantRecorder);
+                App.AutomationEngine = new UIAEngine(App);
             }
         }
 
         private void ResetHotkeys()
         {
-            elegantRecorder.WinAPI.UnregisterGlobalHotkeys();
-            elegantRecorder.WinAPI.RegisterGlobalHotkeys();
+            App.WinAPI.UnregisterGlobalHotkeys();
+            App.WinAPI.RegisterGlobalHotkeys();
         }
 
         private void buttonBrowseScript_Click(object sender, EventArgs e)
@@ -158,6 +165,18 @@ namespace ElegantRecorder
             stopHotkeyData = (int)e.KeyData;
 
             e.SuppressKeyPress = true;
+        }
+
+        private void buttonClearRecHotkey_Click(object sender, EventArgs e)
+        {
+            textBoxRecordHotkey.Text = Keys.None.ToString();
+            recordHotkeyData = (int)Keys.None;
+        }
+
+        private void buttonClearStopHotkey_Click(object sender, EventArgs e)
+        {
+            textBoxStopHotkey.Text = Keys.None.ToString();
+            stopHotkeyData = (int)Keys.None;
         }
     }
 }

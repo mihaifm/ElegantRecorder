@@ -75,6 +75,9 @@ namespace ElegantRecorder
         private IntPtr mouseHookID = IntPtr.Zero;
         private IntPtr keyboardHookID = IntPtr.Zero;
 
+        public int recordHotkeyId = 1;
+        public int stopHotkeyId = 2;
+
         private const int WH_MOUSE_LL = 14;
         private const int WH_KEYBOARD_LL = 13;
 
@@ -427,20 +430,20 @@ namespace ElegantRecorder
             if (App.ElegantOptions.RecordHotkey != 0)
             {
                 GetModifiers((Keys) App.ElegantOptions.RecordHotkey, out var key, out var modifiers);
-                RegisterHotKey(App.Handle, App.recordHotkeyId, modifiers, key);
+                RegisterHotKey(App.Handle, recordHotkeyId, modifiers, key);
             }
 
             if (App.ElegantOptions.StopHotkey != 0)
             {
                 GetModifiers((Keys)App.ElegantOptions.StopHotkey, out var key, out var modifiers);
-                RegisterHotKey(App.Handle, App.stopHotkeyId, modifiers, key);
+                RegisterHotKey(App.Handle, stopHotkeyId, modifiers, key);
             }
         }
 
         public void UnregisterGlobalHotkeys()
         {
-            UnregisterHotKey(App.Handle, App.recordHotkeyId);
-            UnregisterHotKey(App.Handle, App.stopHotkeyId);
+            UnregisterHotKey(App.Handle, recordHotkeyId);
+            UnregisterHotKey(App.Handle, stopHotkeyId);
         }
 
         public void ProcessHotkeyMessage(ref Message m)
@@ -454,11 +457,11 @@ namespace ElegantRecorder
 
                 int id = m.WParam.ToInt32();
 
-                if (id == App.recordHotkeyId)
+                if (id == recordHotkeyId)
                 {
                     App.Record();
                 }
-                else if (id == App.stopHotkeyId)
+                else if (id == stopHotkeyId)
                 {
                     App.Stop(false);
                 }

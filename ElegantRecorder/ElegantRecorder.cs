@@ -13,9 +13,6 @@ namespace ElegantRecorder
 {
     public partial class ElegantRecorder : Form
     {
-        private string status;
-        private Stopwatch stopwatch = new Stopwatch();
-
         public string ConfigFileName;
         public string ConfigFilePath;
 
@@ -23,19 +20,18 @@ namespace ElegantRecorder
         public WinAPI WinAPI;
         public AutomationEngine AutomationEngine;
 
-        List<UIAction> uiSteps = new List<UIAction>();
+        public List<UIAction> UISteps = new List<UIAction>();
 
-        List<Recording> recordings = new List<Recording>();
-        string currentRecordingName = "";
+        public string CurrentRecordingName = "";
 
-        public int recordHotkeyId = 1;
-        public int stopHotkeyId = 2;
+        private bool recording = false;
+        private bool replaying = false;
+        private string status;
+        private Stopwatch stopwatch = new Stopwatch();
 
         public ElegantRecorder()
         {
             InitializeComponent();
-
-            labelStatus.Text = "";
 
             ReadOrCreateConfig();
             ReadCurrentRecordings();
@@ -56,6 +52,7 @@ namespace ElegantRecorder
             WinAPI.RegisterGlobalHotkeys();
 
             ExpandUI();
+            ClearStatus();
 
             dataGridViewRecordings.Sort(new RowComparer(this));
         }
@@ -127,7 +124,7 @@ namespace ElegantRecorder
             if (!ElegantOptions.RecordMouseMove)
                 return;
 
-            if (stopwatch.IsRunning && stopwatch.ElapsedMilliseconds < mouseMoveThreshold && uiSteps.Count > 0)
+            if (stopwatch.IsRunning && stopwatch.ElapsedMilliseconds < mouseMoveThreshold && UISteps.Count > 0)
                 return;
 
             UIAction uiAction = new UIAction();
@@ -136,7 +133,7 @@ namespace ElegantRecorder
 
             uiAction.elapsed = stopwatch.Elapsed.TotalMilliseconds;
 
-            uiSteps.Add(uiAction);
+            UISteps.Add(uiAction);
 
             stopwatch.Reset();
             stopwatch.Start();
@@ -150,7 +147,7 @@ namespace ElegantRecorder
 
             uiAction.elapsed = stopwatch.Elapsed.TotalMilliseconds;
 
-            uiSteps.Add(uiAction);
+            UISteps.Add(uiAction);
 
             stopwatch.Reset();
             stopwatch.Start();
@@ -164,12 +161,12 @@ namespace ElegantRecorder
 
             uiAction.elapsed = stopwatch.Elapsed.TotalMilliseconds;
 
-            uiSteps.Add(uiAction);
+            UISteps.Add(uiAction);
 
             stopwatch.Reset();
             stopwatch.Start();
 
-            labelStatus.Text = status;
+            SetStatus(status);
         }
 
         public /*async*/ void RecordMouse(MouseHookStruct currentMouseHookStruct, MouseHookStruct prevMouseHookStruct)
@@ -177,7 +174,7 @@ namespace ElegantRecorder
             //await System.Threading.Tasks.Task.Run(() => RecordMouseWorker());
             RecordMouseWorker(currentMouseHookStruct, prevMouseHookStruct);
 
-            labelStatus.Text = status;
+            SetStatus(status);
         }
 
         private void RecordMouseWorker(MouseHookStruct currentMouseHookStruct, MouseHookStruct prevMouseHookStruct)
@@ -185,13 +182,13 @@ namespace ElegantRecorder
             //merge the BUTTONUP and BUTTONDOWN events if coordinates are the same
             if (currentMouseHookStruct.pt.x == prevMouseHookStruct.pt.x &&
                 currentMouseHookStruct.pt.y == prevMouseHookStruct.pt.y &&
-                uiSteps.Count > 0 &&
-                uiSteps[uiSteps.Count - 1].EventType == "click")
+                UISteps.Count > 0 &&
+                UISteps[UISteps.Count - 1].EventType == "click")
             {
-                int prevFlags = (int) uiSteps[uiSteps.Count - 1].Flags;
+                int prevFlags = (int) UISteps[UISteps.Count - 1].Flags;
                 if (WinAPI.MergeMouseEvents(ref prevFlags))
                 {
-                    uiSteps[uiSteps.Count - 1].Flags = prevFlags;
+                    UISteps[UISteps.Count - 1].Flags = prevFlags;
                     return;
                 }
             }
@@ -202,15 +199,12 @@ namespace ElegantRecorder
             {
                 uiAction.elapsed = stopwatch.Elapsed.TotalMilliseconds;
 
-                uiSteps.Add(uiAction);
+                UISteps.Add(uiAction);
 
                 stopwatch.Reset();
                 stopwatch.Start();
             }
         }
-
-        private bool recording = false;
-        private bool replaying = false;
 
         private void ResetButtons()
         {
@@ -219,62 +213,6 @@ namespace ElegantRecorder
             buttonRecord.Image = Resources.record_fill;
             buttonReplay.Image = Resources.play_fill;
             buttonPause.Image = Resources.pause_fill;
-        }
-
-        private void CompressMoveData()
-        {
-            List<MoveData> moveData = new List<MoveData>();
-
-            for (int i = uiSteps.Count - 1; i >= 0; i--)
-            {
-                if (uiSteps[i].EventType == "mousemove")
-                {
-                    moveData.Insert(0, new MoveData { X = (int) uiSteps[i].OffsetX, Y = (int) uiSteps[i].OffsetY, T = (int) uiSteps[i].elapsed });
-                    uiSteps.RemoveAt(i);
-                }
-                else
-                {
-                    if (moveData.Count != 0)
-                    {
-                        var uiAction = new UIAction();
-                        AutomationEngine.FillMousePathAction(ref uiAction, ref status, moveData);
-
-                        uiSteps.Insert(i+1, uiAction);
-
-                        moveData.Clear();
-                    }
-                }
-            }
-
-            if (moveData.Count != 0)
-            {
-                var uiAction = new UIAction();
-                AutomationEngine.FillMousePathAction(ref uiAction, ref status, moveData);
-
-                uiSteps.Insert(0, uiAction);
-
-                moveData.Clear();
-            }
-        }
-
-        private void CleanResidualKeys()
-        {
-            //prevent keys remaining pressed at the end of the recording
-
-            for (int i = uiSteps.Count - 1; i >= 0; i--)
-            {
-                if (uiSteps[i].EventType == "keypress")
-                {
-                    if (WinAPI.isKeyUp((int)uiSteps[i].Flags))
-                        break;
-                    else
-                        uiSteps.RemoveAt(i);
-                }
-                else
-                {
-                    break;
-                }
-            }
         }
 
         private void buttonRecord_Click(object sender, EventArgs e)
@@ -293,12 +231,16 @@ namespace ElegantRecorder
             buttonRecord.Image = Resources.record_edit;
             recording = true;
 
-            if (currentRecordingName.Length == 0)
+            if (CurrentRecordingName.Length == 0)
             {
                 SetStatus("Add a new recording first");
                 ResetButtons();
                 return;
             }
+
+            var rec = new Recording(this, CurrentRecordingName);
+            rec.Load();
+
             if (ElegantOptions.RestrictToExe == true && ElegantOptions.ExePath.Length == 0)
             {
                 SetStatus("Specify target executable");
@@ -335,36 +277,16 @@ namespace ElegantRecorder
 
             if (recording)
             {
-                CompressMoveData();
-                CleanResidualKeys();
+                AutomationEngine.CompressMoveData();
+                AutomationEngine.CleanResidualKeys();
 
-                var recordingPath = Path.Combine(ElegantOptions.DataFolder, currentRecordingName + ".json");
+                var rec = new Recording(this, CurrentRecordingName);
+                rec.Load();
 
                 try
                 {
-                    var rec = JsonSerializer.Deserialize<Recording>(File.ReadAllText(recordingPath));
-
-                    using var stream = new StreamWriter(recordingPath);
-
-                    stream.Write("{");
-                    stream.Write("\"Tag\":" + JsonSerializer.Serialize(rec.Tag) + ",");
-                    stream.Write("\n");
-
-                    stream.Write("\"UIActions\": [\n");
-
-                    JsonSerializerOptions jsonOptions = new()
-                    {
-                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                    };
-
-                    for (int i = 0; i < uiSteps.Count; i++)
-                    {
-                        string jsonString = JsonSerializer.Serialize(uiSteps[i], jsonOptions);
-                        stream.Write(jsonString);
-                        stream.Write(i != uiSteps.Count - 1 ? ",\n" : "\n");
-                    }
-
-                    stream.Write("]}");
+                    rec.UIActions = UISteps.ToArray();
+                    rec.Save();
                 }
                 catch (Exception)
                 {
@@ -376,7 +298,7 @@ namespace ElegantRecorder
 
             if (paused == false)
             {
-                uiSteps.Clear();
+                UISteps.Clear();
                 currentActionIndex = 0;
             }
         }
@@ -412,9 +334,9 @@ namespace ElegantRecorder
 
         void ReplayWorker()
         {
-            var recordingPath = Path.Combine(ElegantOptions.DataFolder, currentRecordingName + ".json");
+            var rec = new Recording(this, CurrentRecordingName);
+            rec.Load();
 
-            Recording rec = JsonSerializer.Deserialize<Recording>(File.ReadAllText(recordingPath));
             UIAction[] steps = rec.UIActions;
 
             if (currentActionIndex >= steps.Length - 1)
@@ -428,7 +350,7 @@ namespace ElegantRecorder
 
                 if (action.elapsed != null)
                 {
-                    Thread.Sleep((int)ElegantOptions.GetPlaybackSpeedDuration((double)action.elapsed));
+                    Thread.Sleep((int)ElegantOptions.GetPlaybackSpeedDuration(rec.PlaybackSpeed, (double)action.elapsed));
                 }
 
                 try
@@ -463,7 +385,7 @@ namespace ElegantRecorder
                 }
                 else if (action.EventType == "mousepath")
                 {
-                    AutomationEngine.ReplayMousePathAction(action, ref status);
+                    AutomationEngine.ReplayMousePathAction(action, rec.PlaybackSpeed, ref status);
                 }
             }
 
@@ -509,7 +431,7 @@ namespace ElegantRecorder
 
                     uiAction.elapsed = stopwatch.Elapsed.TotalMilliseconds;
 
-                    uiSteps.Add(uiAction);
+                    UISteps.Add(uiAction);
 
                     stopwatch.Reset();
                     stopwatch.Start();
@@ -561,11 +483,9 @@ namespace ElegantRecorder
             {
                 ClearStatus();
 
-                Recording rec = new Recording();
-                rec.Name = textBoxNewRec.Text;
-                rec.Path = Path.Combine(ElegantOptions.DataFolder, rec.Name + ".json");
+                Recording rec = new Recording(this, textBoxNewRec.Text.Trim());
 
-                if (File.Exists(rec.Path))
+                if (File.Exists(rec.FilePath))
                 {
                     SetStatus("Recording with the same name already exists");
                     return;
@@ -573,7 +493,7 @@ namespace ElegantRecorder
 
                 try
                 {
-                    File.WriteAllText(rec.Path, JsonSerializer.Serialize(rec));
+                    File.WriteAllText(rec.FilePath, JsonSerializer.Serialize(rec));
 
                     dataGridViewRecordings.Rows.Add(textBoxNewRec.Text, "");
                     textBoxNewRec.Text = "";
@@ -594,9 +514,9 @@ namespace ElegantRecorder
         private void dataGridViewRecordings_SelectionChanged(object sender, EventArgs e)
         {
             if (dataGridViewRecordings.SelectedRows.Count > 0)
-                currentRecordingName = dataGridViewRecordings.SelectedRows[0].Cells[0].Value as string;
+                CurrentRecordingName = dataGridViewRecordings.SelectedRows[0].Cells[0].Value as string;
             else
-                currentRecordingName = "";
+                CurrentRecordingName = "";
         }
 
         private class RowComparer : System.Collections.IComparer
@@ -621,13 +541,13 @@ namespace ElegantRecorder
         {
             if (e.KeyCode == Keys.Delete)
             {
-                if (currentRecordingName.Length > 0 && ElegantOptions.ExpandedUI)
+                if (CurrentRecordingName.Length > 0 && ElegantOptions.ExpandedUI)
                 {
-                    var diag = MessageBox.Show("Delete recording " + currentRecordingName + " ?", "ElegantRecorder - Confirm Delete", MessageBoxButtons.OKCancel);
+                    var diag = MessageBox.Show("Delete recording " + CurrentRecordingName + " ?", "ElegantRecorder - Confirm Delete", MessageBoxButtons.OKCancel);
 
                     if (diag == DialogResult.OK)
                     {
-                        var currentFile = Path.Combine(ElegantOptions.DataFolder, currentRecordingName + ".json");
+                        var currentFile = Path.Combine(ElegantOptions.DataFolder, CurrentRecordingName + ".json");
                         File.Delete(currentFile);
 
                         ReadCurrentRecordings();
