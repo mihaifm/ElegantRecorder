@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
-using System.Threading;
 using System.Windows.Forms;
 using ElegantRecorder.Properties;
-using System.Threading.Tasks;
 
 namespace ElegantRecorder
 {
@@ -187,9 +185,8 @@ namespace ElegantRecorder
             }
         }
 
-        public /*async*/ void RecordMouse(MouseHookStruct currentMouseHookStruct, MouseHookStruct prevMouseHookStruct)
+        public void RecordMouse(MouseHookStruct currentMouseHookStruct, MouseHookStruct prevMouseHookStruct)
         {
-            //await System.Threading.Tasks.Task.Run(() => RecordMouseWorker());
             RecordMouseWorker(currentMouseHookStruct, prevMouseHookStruct);
 
             SetStatus(status);
@@ -276,9 +273,6 @@ namespace ElegantRecorder
             WinAPI.InstallHooks();
         }
 
-        CancellationTokenSource tokenSource = new CancellationTokenSource();
-        CancellationToken token;
-
         // Use MouseDown istead of Click event to avoid situations where other UI events happen between mouse down and up, due to the automation
         private void buttonStop_MouseDown(object sender, MouseEventArgs e)
         {
@@ -289,12 +283,9 @@ namespace ElegantRecorder
         {
             WinAPI.UninstallHooks();
 
-            stopwatch.Reset();
+            replayInterrupted = true;
 
-            if (tokenSource != null)
-            {
-                tokenSource.Cancel();
-            }
+            stopwatch.Reset();
 
             ClearStatus();
 
@@ -326,7 +317,7 @@ namespace ElegantRecorder
             }
         }
 
-        private async void buttonReplay_Click(object sender, EventArgs e)
+        private void buttonReplay_Click(object sender, EventArgs e)
         {
             if (replaying)
                 return;
@@ -334,87 +325,100 @@ namespace ElegantRecorder
             ResetButtons();
 
             replaying = true;
-            buttonReplay.Image = Resources.play_edit;
+            replayInterrupted = false;
 
-            tokenSource.Dispose();
-            tokenSource = new CancellationTokenSource();
-            token = tokenSource.Token;
+            buttonReplay.Image = Resources.play_edit;
 
             ClearStatus();
 
-            var task = Task.Run(ReplayWorker, token);
-
-            try
-            {
-                await task;
-            }
-            catch (Exception) { }
+            Replay();
 
             SetStatus(status);
         }
 
         private int currentActionIndex = 0;
+        private Timer replayTimer = null;
+        private Recording ReplayRec = null;
+        private bool replayInterrupted = false;
 
-        void ReplayWorker()
+        void Replay()
         {
-            var rec = new Recording(this, CurrentRecordingName);
-            rec.Load();
+            ReplayRec = new Recording(this, CurrentRecordingName);
+            ReplayRec.Load();
 
-            UIAction[] steps = rec.UIActions;
-
-            if (currentActionIndex >= steps.Length - 1)
+            if (currentActionIndex >= ReplayRec.UIActions.Length - 1)
                 currentActionIndex = 0;
 
-            for (int i = currentActionIndex; i < steps.Length; i++)
+            if (ReplayRec.UIActions.Length > 0)
             {
-                var action = steps[i];
+                replayTimer = new Timer();
+                replayTimer.Tick += ReplayTimer_Tick;
+                PlayAction();
+            }
+        }
 
-                currentActionIndex = i;
-
-                if (action.elapsed != null)
-                {
-                    Thread.Sleep((int)ElegantOptions.GetPlaybackSpeedDuration(rec.PlaybackSpeed, (double)action.elapsed));
-                }
-
-                try
-                {
-                    token.ThrowIfCancellationRequested();
-                }
-                catch (OperationCanceledException)
-                {
-                    status = "Replay interrupted";
-                    return;
-                }
-
-                if (action.EventType == "click")
-                {
-                    AutomationEngine.ReplayClickAction(action, ref status);
-                }
-                else if (action.EventType == "mousemove")
-                {
-                    AutomationEngine.ReplayMouseMoveAction(action, ref status);
-                }
-                else if (action.EventType == "mousewheel")
-                {
-                    AutomationEngine.ReplayMouseWheelAction(action, ref status);
-                }
-                else if (action.EventType == "keypress")
-                {
-                    AutomationEngine.ReplayKeypressAction(action, ref status);
-                }
-                else if (action.EventType == "clipboard")
-                {
-                    AutomationEngine.ReplayClipboardAction(action, ref status);
-                }
-                else if (action.EventType == "mousepath")
-                {
-                    AutomationEngine.ReplayMousePathAction(action, rec.PlaybackSpeed, ref status);
-                }
+        private void PlayAction()
+        {
+            if (replayInterrupted)
+            {
+                replayTimer.Stop();
+                SetStatus("Replay interrupted");
+                return;
             }
 
-            status = "Replay finished";
+            var action = ReplayRec.UIActions[currentActionIndex];
 
-            ResetButtons();
+            if (action.EventType == "click")
+            {
+                AutomationEngine.ReplayClickAction(action, ref status);
+            }
+            else if (action.EventType == "mousemove")
+            {
+                AutomationEngine.ReplayMouseMoveAction(action, ref status);
+            }
+            else if (action.EventType == "mousewheel")
+            {
+                AutomationEngine.ReplayMouseWheelAction(action, ref status);
+            }
+            else if (action.EventType == "keypress")
+            {
+                AutomationEngine.ReplayKeypressAction(action, ref status);
+            }
+            else if (action.EventType == "clipboard")
+            {
+                AutomationEngine.ReplayClipboardAction(action, ref status);
+            }
+            else if (action.EventType == "mousepath")
+            {
+                AutomationEngine.ReplayMousePathAction(action, ReplayRec.PlaybackSpeed, ref status);
+            }
+
+            if (currentActionIndex < ReplayRec.UIActions.Length - 1)
+            {
+                currentActionIndex++;
+
+                if (ReplayRec.UIActions[currentActionIndex].elapsed != null && ReplayRec.UIActions[currentActionIndex].elapsed != 0)
+                {
+                    replayTimer.Interval = (int)ElegantOptions.GetPlaybackSpeedDuration(ReplayRec.PlaybackSpeed, (double)ReplayRec.UIActions[currentActionIndex].elapsed);
+                    replayTimer.Start();
+                }
+                else
+                {
+                    PlayAction();
+                }
+            }
+            else
+            {
+                replayTimer.Stop();
+                SetStatus("Replay finished");
+                ResetButtons();
+            }
+        }
+
+        private void ReplayTimer_Tick(object? sender, EventArgs e)
+        {
+            replayTimer.Stop();
+            PlayAction();
         }
 
         private void buttonSettings_Click(object sender, EventArgs e)

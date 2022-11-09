@@ -104,8 +104,6 @@ namespace ElegantRecorder
 
         private const int WM_CLIPBOARDUPDATE = 0x031D;
 
-        private const int CF_UNICODETEXT = 13;
-
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelHookProc lpfn, IntPtr hMod, uint dwThreadId);
 
@@ -154,18 +152,6 @@ namespace ElegantRecorder
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern bool OpenClipboard(IntPtr hWndNewOwner);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern bool CloseClipboard();
-
-        [DllImport("user32.dll")]
-        static extern bool EmptyClipboard();
-
-        [DllImport("user32.dll")]
-        static extern IntPtr SetClipboardData(uint uFormat, IntPtr hMem);
-
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern bool RegisterHotKey(IntPtr hWnd, int id, KeyModifiers fsModifiers, Keys vk);
 
@@ -175,7 +161,6 @@ namespace ElegantRecorder
         private delegate IntPtr LowLevelHookProc(int nCode, IntPtr wParam, IntPtr lParam);
         private LowLevelHookProc mouseDelegate = null;
         private LowLevelHookProc keyboardDelegate = null;
-
 
         public MouseHookStruct CurrentMouseHookStruct;
         public MouseHookStruct PrevMouseHookStruct;
@@ -380,20 +365,6 @@ namespace ElegantRecorder
             }
 
             return false;
-        }
-
-        public void SetClipboardText(string text)
-        {
-            //string nullTerminatedStr = text + "\0";
-
-            //byte[] strBytes = Encoding.Unicode.GetBytes(nullTerminatedStr);
-            //IntPtr hglobal = Marshal.AllocHGlobal(strBytes.Length);
-            //Marshal.Copy(strBytes, 0, hglobal, strBytes.Length);
-            //OpenClipboard(IntPtr.Zero);
-            //EmptyClipboard();
-            //SetClipboardData(CF_UNICODETEXT, hglobal);
-            //CloseClipboard();
-            //Marshal.FreeHGlobal(hglobal);
         }
 
         public static void GetModifiers(Keys keydata, out Keys key, out KeyModifiers modifers)

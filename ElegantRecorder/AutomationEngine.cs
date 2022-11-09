@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace ElegantRecorder
 {
@@ -95,7 +94,7 @@ namespace ElegantRecorder
 
         public virtual bool ReplayClipboardAction(UIAction action, ref string status)
         {
-            App.WinAPI.SetClipboardText(action.TextData);
+            System.Windows.Clipboard.SetText(action.TextData);
             return true;
         }
 
