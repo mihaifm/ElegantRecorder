@@ -54,23 +54,23 @@ namespace ElegantRecorder
             File.WriteAllText(FilePath, JsonSerializer.Serialize(this));
         }
 
-        public static double GetPlaybackSpeedDuration(string playbackSpeed, double initialDuration)
+        public static int GetPlaybackSpeed(string playbackSpeed, double? initialDuration)
         {
             switch(playbackSpeed)
             {
                 case "Fastest":
                     return 0;
                 case "Fast":
-                    return 0.5 * initialDuration;
+                    return (int)(0.5 * initialDuration);
                 case "Normal":
-                    return initialDuration;
+                    return (int)(initialDuration);
                 case "Slow":
-                    return 1.5 * initialDuration;
+                    return (int)(1.5 * initialDuration);
                 case "Slowest":
-                    return 2.0 * initialDuration;
+                    return (int)(2.0 * initialDuration);
             }
 
-            return initialDuration;
+            return (int)initialDuration;
         }
     }
 }

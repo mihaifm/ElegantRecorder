@@ -332,84 +332,52 @@ namespace ElegantRecorder
             ClearStatus();
 
             Replay();
-
-            SetStatus(status);
         }
 
-        private int currentActionIndex = 0;
+        private int currentActionIndex = -1;
         private Timer replayTimer = null;
         private Recording ReplayRec = null;
         private bool replayInterrupted = false;
 
-        void Replay()
+        public void Replay()
         {
             ReplayRec = new Recording(this, CurrentRecordingName);
             ReplayRec.Load();
 
             if (currentActionIndex >= ReplayRec.UIActions.Length - 1)
-                currentActionIndex = 0;
+                currentActionIndex = -1;
 
-            if (ReplayRec.UIActions.Length > 0)
-            {
-                replayTimer = new Timer();
-                replayTimer.Tick += ReplayTimer_Tick;
-                PlayAction();
-            }
+            replayTimer = new Timer();
+            replayTimer.Tick += ReplayTimer_Tick;
+            PlayAction();
         }
 
-        private void PlayAction()
+        public void PlayAction()
         {
+            replayTimer.Stop();
+
             if (replayInterrupted)
             {
-                replayTimer.Stop();
                 SetStatus("Replay interrupted");
                 return;
             }
 
-            var action = ReplayRec.UIActions[currentActionIndex];
+            currentActionIndex++;
 
-            if (action.EventType == "click")
+            if (currentActionIndex <= ReplayRec.UIActions.Length - 1)
             {
-                AutomationEngine.ReplayClickAction(action, ref status);
-            }
-            else if (action.EventType == "mousemove")
-            {
-                AutomationEngine.ReplayMouseMoveAction(action, ref status);
-            }
-            else if (action.EventType == "mousewheel")
-            {
-                AutomationEngine.ReplayMouseWheelAction(action, ref status);
-            }
-            else if (action.EventType == "keypress")
-            {
-                AutomationEngine.ReplayKeypressAction(action, ref status);
-            }
-            else if (action.EventType == "clipboard")
-            {
-                AutomationEngine.ReplayClipboardAction(action, ref status);
-            }
-            else if (action.EventType == "mousepath")
-            {
-                AutomationEngine.ReplayMousePathAction(action, ReplayRec.PlaybackSpeed, ref status);
-            }
-
-            if (currentActionIndex < ReplayRec.UIActions.Length - 1)
-            {
-                currentActionIndex++;
-
                 if (ReplayRec.UIActions[currentActionIndex].elapsed != null && ReplayRec.UIActions[currentActionIndex].elapsed != 0)
                 {
-                    replayTimer.Interval = (int)ElegantOptions.GetPlaybackSpeedDuration(ReplayRec.PlaybackSpeed, (double)ReplayRec.UIActions[currentActionIndex].elapsed);
+                    replayTimer.Interval = ElegantOptions.GetPlaybackSpeed(ReplayRec.PlaybackSpeed, ReplayRec.UIActions[currentActionIndex].elapsed);
                     replayTimer.Start();
                 }
                 else
                 {
-                    PlayAction();
+                    ReplayTimer_Tick(this, new EventArgs());
                 }
             }
             else
             {
-                replayTimer.Stop();
                 SetStatus("Replay finished");
                 ResetButtons();
             }
@@ -417,8 +385,7 @@ namespace ElegantRecorder
 
         private void ReplayTimer_Tick(object? sender, EventArgs e)
         {
-            replayTimer.Stop();
-            PlayAction();
+            AutomationEngine.ReplayAction(ReplayRec.UIActions[currentActionIndex], ref status);
         }
 
         private void buttonSettings_Click(object sender, EventArgs e)

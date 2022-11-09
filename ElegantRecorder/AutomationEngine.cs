@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Windows.Forms;
 
 namespace ElegantRecorder
 {
@@ -61,6 +61,41 @@ namespace ElegantRecorder
             return true;
         }
 
+        public virtual void ReplayAction(UIAction action, ref string status)
+        {
+            bool result = true;
+
+            if (action.EventType == "click")
+            {
+                result = ReplayClickAction(action, ref status);
+                App.PlayAction();
+            }
+            else if (action.EventType == "mousemove")
+            {
+                result = ReplayMouseMoveAction(action, ref status);
+                App.PlayAction();
+            }
+            else if (action.EventType == "mousewheel")
+            {
+                result = ReplayMouseWheelAction(action, ref status);
+                App.PlayAction();
+            }
+            else if (action.EventType == "keypress")
+            {
+                result = ReplayKeypressAction(action, ref status);
+                App.PlayAction();
+            }
+            else if (action.EventType == "clipboard")
+            {
+                result = ReplayClipboardAction(action, ref status);
+                App.PlayAction();
+            }
+            else if (action.EventType == "mousepath")
+            {
+                result = ReplayMousePathAction(action, ref status);
+            }
+        }
+
         public abstract bool ReplayClickAction(UIAction action, ref string status);
 
         public virtual bool ReplayMouseMoveAction(UIAction action, ref string status)
@@ -69,15 +104,53 @@ namespace ElegantRecorder
             return true;
         }
 
-        public virtual bool ReplayMousePathAction(UIAction action, string playbackSpeed, ref string status)
-        {
-            foreach(var m in action.MoveData)
-            {
-                App.WinAPI.MouseMove(m.X, m.Y, UIntPtr.Zero);
-                Thread.Sleep((int)ElegantOptions.GetPlaybackSpeedDuration(playbackSpeed, m.T));
-            }
+        Timer mousePathTimer = null;
+        int currentMousePathStep = -1;
+        UIAction mousePathAction = null;
 
-            return true;
+        public virtual bool ReplayMousePathAction(UIAction action, ref string status)
+        {
+            mousePathAction = action;
+
+            currentMousePathStep = -1;
+
+            mousePathTimer = new Timer();
+            mousePathTimer.Tick += MousePathTimer_Tick;
+            PlayMousePathStep();
+
+            return false;
+        }
+
+        private void PlayMousePathStep()
+        {
+            mousePathTimer.Stop();
+
+            currentMousePathStep++;
+
+            if (currentMousePathStep <= mousePathAction.MoveData.Length - 1)
+            {
+                if (mousePathAction.MoveData[currentMousePathStep].T > 0)
+                {
+                    mousePathTimer.Interval = ElegantOptions.GetPlaybackSpeed(App.ElegantOptions.PlaybackSpeed, mousePathAction.MoveData[currentMousePathStep].T);
+                    mousePathTimer.Start();
+                }
+                else
+                {
+                    MousePathTimer_Tick(null, new EventArgs());
+                }
+            }
+            else
+            {
+                App.PlayAction();
+            }
+        }
+
+        private void MousePathTimer_Tick(object? sender, EventArgs e)
+        {
+            var m = mousePathAction.MoveData[currentMousePathStep];
+            App.WinAPI.MouseMove(m.X, m.Y, UIntPtr.Zero);
+
+            PlayMousePathStep();
         }
 
         public virtual bool ReplayMouseWheelAction(UIAction action, ref string status)
