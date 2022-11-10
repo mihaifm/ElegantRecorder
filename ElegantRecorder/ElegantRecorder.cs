@@ -26,6 +26,9 @@ namespace ElegantRecorder
         private string status;
         private Stopwatch stopwatch = new Stopwatch();
 
+        public int CurrentHotkeyId = 8;
+        public Dictionary<int, string> RecHotkeys = new Dictionary<int, string>();
+
         public ElegantRecorder()
         {
             InitializeComponent();
@@ -334,19 +337,7 @@ namespace ElegantRecorder
 
         private void buttonReplay_Click(object sender, EventArgs e)
         {
-            if (replaying)
-                return;
-
-            ResetButtons();
-
-            replaying = true;
-            replayInterrupted = false;
-
-            buttonReplay.Image = Resources.play_edit;
-
-            ClearStatus();
-
-            Replay();
+            Replay(CurrentRecordingName);
         }
 
         private int currentActionIndex = -1;
@@ -354,8 +345,32 @@ namespace ElegantRecorder
         private Recording ReplayRec = null;
         private bool replayInterrupted = false;
 
-        public void Replay()
+        public void Replay(string recording)
         {
+            if (replaying)
+                return;
+
+            ResetButtons();
+            ClearStatus();
+            buttonReplay.Image = Resources.play_edit;
+
+            replaying = true;
+            replayInterrupted = false;
+
+            if (recording != CurrentRecordingName)
+            {
+                foreach(DataGridViewRow row in dataGridViewRecordings.Rows)
+                {
+                    if (row.Cells[0].Value.ToString() == recording)
+                    {
+                        dataGridViewRecordings.ClearSelection();
+                        row.Selected = true;
+                        CurrentRecordingName = recording;
+                        break;
+                    }
+                }
+            }
+
             ReplayRec = new Recording(this, CurrentRecordingName);
             ReplayRec.Load();
 
@@ -644,6 +659,12 @@ namespace ElegantRecorder
             Options options = new Options(this);
             options.Show();
             options.RenameFocus();
+        }
+
+        private void buttonTriggers_Click(object sender, EventArgs e)
+        {
+            var triggerEditor = new TriggerEditor(this);
+            triggerEditor.Show();
         }
     }
 }

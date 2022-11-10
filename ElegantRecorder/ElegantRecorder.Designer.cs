@@ -51,6 +51,7 @@ namespace ElegantRecorder
             this.refreshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.buttonTriggers = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRecordings)).BeginInit();
             this.contextMenuStripRClick.SuspendLayout();
             this.SuspendLayout();
@@ -68,7 +69,7 @@ namespace ElegantRecorder
             // buttonPin
             // 
             this.buttonPin.Image = global::ElegantRecorder.Properties.Resources.geo;
-            this.buttonPin.Location = new System.Drawing.Point(320, 12);
+            this.buttonPin.Location = new System.Drawing.Point(375, 12);
             this.buttonPin.Name = "buttonPin";
             this.buttonPin.Size = new System.Drawing.Size(49, 48);
             this.buttonPin.TabIndex = 11;
@@ -136,7 +137,7 @@ namespace ElegantRecorder
             this.buttonExpand.FlatAppearance.BorderSize = 0;
             this.buttonExpand.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonExpand.Image = global::ElegantRecorder.Properties.Resources.double_up;
-            this.buttonExpand.Location = new System.Drawing.Point(375, 12);
+            this.buttonExpand.Location = new System.Drawing.Point(429, 12);
             this.buttonExpand.Name = "buttonExpand";
             this.buttonExpand.Size = new System.Drawing.Size(49, 48);
             this.buttonExpand.TabIndex = 17;
@@ -175,7 +176,7 @@ namespace ElegantRecorder
             this.dataGridViewRecordings.RowHeadersVisible = false;
             this.dataGridViewRecordings.RowTemplate.Height = 25;
             this.dataGridViewRecordings.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridViewRecordings.Size = new System.Drawing.Size(415, 162);
+            this.dataGridViewRecordings.Size = new System.Drawing.Size(469, 162);
             this.dataGridViewRecordings.TabIndex = 18;
             this.dataGridViewRecordings.SelectionChanged += new System.EventHandler(this.dataGridViewRecordings_SelectionChanged);
             this.dataGridViewRecordings.KeyDown += new System.Windows.Forms.KeyEventHandler(this.dataGridViewRecordings_KeyDown);
@@ -202,16 +203,15 @@ namespace ElegantRecorder
             this.textBoxNewRec.Location = new System.Drawing.Point(12, 87);
             this.textBoxNewRec.Name = "textBoxNewRec";
             this.textBoxNewRec.PlaceholderText = " New...";
-            this.textBoxNewRec.Size = new System.Drawing.Size(357, 29);
+            this.textBoxNewRec.Size = new System.Drawing.Size(411, 29);
             this.textBoxNewRec.TabIndex = 19;
             this.textBoxNewRec.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBoxNewRec_KeyDown);
             // 
             // buttonAddRec
             // 
-            this.buttonAddRec.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonAddRec.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonAddRec.Image = global::ElegantRecorder.Properties.Resources.plus_circle;
-            this.buttonAddRec.Location = new System.Drawing.Point(375, 87);
+            this.buttonAddRec.Location = new System.Drawing.Point(429, 87);
             this.buttonAddRec.Name = "buttonAddRec";
             this.buttonAddRec.Size = new System.Drawing.Size(52, 29);
             this.buttonAddRec.TabIndex = 21;
@@ -248,13 +248,24 @@ namespace ElegantRecorder
             this.deleteToolStripMenuItem.Text = "Delete";
             this.deleteToolStripMenuItem.Click += new System.EventHandler(this.deleteToolStripMenuItem_Click);
             // 
+            // buttonTriggers
+            // 
+            this.buttonTriggers.Image = global::ElegantRecorder.Properties.Resources.stopwatch;
+            this.buttonTriggers.Location = new System.Drawing.Point(320, 12);
+            this.buttonTriggers.Name = "buttonTriggers";
+            this.buttonTriggers.Size = new System.Drawing.Size(49, 48);
+            this.buttonTriggers.TabIndex = 22;
+            this.toolTipRec.SetToolTip(this.buttonTriggers, "Triggers");
+            this.buttonTriggers.UseVisualStyleBackColor = true;
+            this.buttonTriggers.Click += new System.EventHandler(this.buttonTriggers_Click);
+            // 
             // ElegantRecorder
             // 
             this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(439, 311);
+            this.ClientSize = new System.Drawing.Size(493, 311);
+            this.Controls.Add(this.buttonTriggers);
             this.Controls.Add(this.buttonAddRec);
             this.Controls.Add(this.textBoxNewRec);
-            this.Controls.Add(this.dataGridViewRecordings);
             this.Controls.Add(this.buttonExpand);
             this.Controls.Add(this.buttonSettings);
             this.Controls.Add(this.buttonPause);
@@ -263,6 +274,7 @@ namespace ElegantRecorder
             this.Controls.Add(this.buttonReplay);
             this.Controls.Add(this.buttonPin);
             this.Controls.Add(this.labelStatus);
+            this.Controls.Add(this.dataGridViewRecordings);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ElegantRecorder";
             this.Text = "Elegant Recorder";
@@ -294,5 +306,6 @@ namespace ElegantRecorder
         private ToolStripMenuItem refreshToolStripMenuItem;
         private ToolStripMenuItem renameToolStripMenuItem;
         private ToolStripMenuItem deleteToolStripMenuItem;
+        private Button buttonTriggers;
     }
 }

@@ -417,6 +417,20 @@ namespace ElegantRecorder
             UnregisterHotKey(App.Handle, stopHotkeyId);
         }
 
+        public void UnregisterTriggerHotkey(int hotkeyId)
+        {
+            UnregisterHotKey(App.Handle, hotkeyId);
+        }
+
+        public void RegisterTriggerHotkey(int hotkey)
+        {
+            if (hotkey != 0)
+            {
+                GetModifiers((Keys)hotkey, out var key, out var modifiers);
+                RegisterHotKey(App.Handle, App.CurrentHotkeyId, modifiers, key);
+            }
+        }
+
         public void ProcessHotkeyMessage(ref Message m)
         {
             if (m.Msg == WM_HOTKEY)
@@ -435,6 +449,11 @@ namespace ElegantRecorder
                 else if (id == stopHotkeyId)
                 {
                     App.Stop(false);
+                }
+
+                if (App.RecHotkeys.ContainsKey(id))
+                {
+                    App.Replay(App.RecHotkeys[id]);
                 }
             }
         }

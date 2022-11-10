@@ -3,7 +3,6 @@ using System.IO;
 using System.Text.Json;
 using System;
 using System.Reflection;
-using System.Windows;
 
 namespace ElegantRecorder
 {
@@ -16,6 +15,7 @@ namespace ElegantRecorder
         public bool Encrypted { get; set; }
         public bool RestrictToExe { get; set; }
         public string ExePath { get; set; }
+        public Triggers Triggers { get; set; }
         public UIAction[] UIActions { get; set; }
         public string EncryptedActions { get; set; }
 
@@ -47,6 +47,8 @@ namespace ElegantRecorder
                 FilePath = Path.Combine(App.ElegantOptions.DataFolder, Name + ".json");
             else
                 FilePath = "";
+
+            Triggers = new Triggers();
         }
 
         private void SyncAppOptions(bool direction)
@@ -155,7 +157,8 @@ namespace ElegantRecorder
                     stream.Write("\"PlaybackSpeed\":" + JsonSerializer.Serialize(PlaybackSpeed) + ",");
                     stream.Write("\"Encrypted\":" + JsonSerializer.Serialize(Encrypted) + ",");
                     stream.Write("\"RestrictToExe\":" + JsonSerializer.Serialize(RestrictToExe) + ",");
-                    stream.Write("\"ExePath\":" + JsonSerializer.Serialize(ExePath) + ",");
+                    stream.Write("\"ExePath\":" + JsonSerializer.Serialize(ExePath) + ",\n");
+                    stream.Write("\"Triggers\":" + JsonSerializer.Serialize(Triggers) + ",");
 
                     stream.Write("\n");
 

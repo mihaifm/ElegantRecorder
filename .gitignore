@@ -3,3 +3,4 @@ obj/
 .vs/
 notes.txt
 *.csproj.user
+*/Properties/PublishProfiles/*
