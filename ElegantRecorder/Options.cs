@@ -61,7 +61,7 @@ namespace ElegantRecorder
             App.ElegantOptions.CurrRecName = textBoxCurrRecName.Text;
 
             App.ElegantOptions.Save(App.ConfigFilePath);
-            Rec.Save();
+            Rec.Save(false);
 
             App.ReadCurrentRecordings();
         }

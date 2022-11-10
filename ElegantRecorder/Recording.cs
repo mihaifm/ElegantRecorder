@@ -17,11 +17,14 @@ namespace ElegantRecorder
         public bool RestrictToExe { get; set; }
         public string ExePath { get; set; }
         public UIAction[] UIActions { get; set; }
+        public string EncryptedActions { get; set; }
 
         [JsonIgnore]
         public string Name { get; set; }
         [JsonIgnore]
         public string FilePath { get; set; }
+        [JsonIgnore]
+        public string Password { get; set; }
 
         private ElegantRecorder App;
 
@@ -91,7 +94,26 @@ namespace ElegantRecorder
             }
         }
 
-        public void Save()
+        public void Decrypt()
+        {
+            try
+            {
+                var plainData = StringCipher.Decrypt(EncryptedActions, Password);
+
+                JsonSerializerOptions jsonOptions = new()
+                {
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
+
+                UIActions = JsonSerializer.Deserialize<UIAction[]>(plainData, jsonOptions);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Save(bool encrypt)
         {
             try
             {
@@ -109,33 +131,46 @@ namespace ElegantRecorder
 
             try
             {
-                using var stream = new StreamWriter(FilePath);
-
-                stream.Write("{");
-
-                stream.Write("\"Tag\":" + JsonSerializer.Serialize(DefaultTag) + ",");
-                stream.Write("\"PlaybackSpeed\":" + JsonSerializer.Serialize(PlaybackSpeed) + ",");
-                stream.Write("\"Encrypted\":" + JsonSerializer.Serialize(Encrypted) + ",");
-                stream.Write("\"RestrictToExe\":" + JsonSerializer.Serialize(RestrictToExe) + ",");
-                stream.Write("\"ExePath\":" + JsonSerializer.Serialize(ExePath) + ",");
-
-                stream.Write("\n");
-
-                stream.Write("\"UIActions\": [\n");
-
                 JsonSerializerOptions jsonOptions = new()
                 {
                     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                 };
 
-                for (int i = 0; i < UIActions.Length; i++)
-                {
-                    string jsonString = JsonSerializer.Serialize(UIActions[i], jsonOptions);
-                    stream.Write(jsonString);
-                    stream.Write(i != UIActions.Length - 1 ? ",\n" : "\n");
-                }
+                using var stream = new StreamWriter(FilePath);
 
-                stream.Write("]}");
+                if (encrypt && Encrypted)
+                {
+                    var plainData = JsonSerializer.Serialize(UIActions, jsonOptions);
+                    EncryptedActions = StringCipher.Encrypt(plainData, Password);
+                    UIActions = new UIAction[0];
+
+                    //stream.Write("\"EncryptedActions\":" + "\"" + encData + "\"");
+                    stream.Write(JsonSerializer.Serialize(this));
+                }
+                else
+                {
+                    stream.Write("{");
+
+                    stream.Write("\"Tag\":" + JsonSerializer.Serialize(DefaultTag) + ",");
+                    stream.Write("\"PlaybackSpeed\":" + JsonSerializer.Serialize(PlaybackSpeed) + ",");
+                    stream.Write("\"Encrypted\":" + JsonSerializer.Serialize(Encrypted) + ",");
+                    stream.Write("\"RestrictToExe\":" + JsonSerializer.Serialize(RestrictToExe) + ",");
+                    stream.Write("\"ExePath\":" + JsonSerializer.Serialize(ExePath) + ",");
+
+                    stream.Write("\n");
+
+                    stream.Write("\"UIActions\": [\n");
+
+                    for (int i = 0; i < UIActions.Length; i++)
+                    {
+                        string jsonString = JsonSerializer.Serialize(UIActions[i], jsonOptions);
+                        stream.Write(jsonString);
+                        stream.Write(i != UIActions.Length - 1 ? ",\n" : "\n");
+                    }
+
+                    stream.Write("]");
+                    stream.Write("}");
+                }
             }
             catch (Exception)
             {

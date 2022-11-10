@@ -297,14 +297,29 @@ namespace ElegantRecorder
                 var rec = new Recording(this, CurrentRecordingName);
                 rec.Load();
 
-                try
+                if (rec.Encrypted)
                 {
-                    rec.UIActions = UISteps.ToArray();
-                    rec.Save();
+                    var encPwd = new EncryptionPassword(true);
+                    encPwd.ShowDialog();
+
+                    if (encPwd.DialogResult == DialogResult.OK)
+                    {
+                        rec.Password = encPwd.Password;
+                        rec.UIActions = UISteps.ToArray();
+                        rec.Save(true);
+                    }
                 }
-                catch (Exception)
+                else
                 {
-                    SetStatus("Invalid recording file, recording not saved!");
+                    try
+                    {
+                        rec.UIActions = UISteps.ToArray();
+                        rec.Save(false);
+                    }
+                    catch (Exception)
+                    {
+                        SetStatus("Invalid recording file, recording not saved!");
+                    }
                 }
             }
 
@@ -343,6 +358,28 @@ namespace ElegantRecorder
         {
             ReplayRec = new Recording(this, CurrentRecordingName);
             ReplayRec.Load();
+
+            if (ReplayRec.Encrypted)
+            {
+                var encPwd = new EncryptionPassword(false);
+                encPwd.ShowDialog();
+
+                if (encPwd.DialogResult == DialogResult.OK)
+                {
+                    ReplayRec.Password = encPwd.Password;
+
+                    try
+                    {
+                        ReplayRec.Decrypt();
+                    }
+                    catch 
+                    {
+                        SetStatus("Failed to decrypt");
+                        ResetButtons();
+                        return;
+                    }
+                }
+            }
 
             if (currentActionIndex >= ReplayRec.UIActions.Length - 1)
                 currentActionIndex = -1;
@@ -507,6 +544,8 @@ namespace ElegantRecorder
 
         private void dataGridViewRecordings_SelectionChanged(object sender, EventArgs e)
         {
+            currentActionIndex = -1;
+
             if (dataGridViewRecordings.SelectedRows.Count > 0)
                 CurrentRecordingName = dataGridViewRecordings.SelectedRows[0].Cells[0].Value as string;
             else
