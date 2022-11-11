@@ -31,7 +31,9 @@ namespace ElegantRecorder
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ElegantRecorder));
             this.labelStatus = new System.Windows.Forms.Label();
             this.buttonPin = new System.Windows.Forms.Button();
@@ -41,17 +43,18 @@ namespace ElegantRecorder
             this.buttonPause = new System.Windows.Forms.Button();
             this.buttonSettings = new System.Windows.Forms.Button();
             this.toolTipRec = new System.Windows.Forms.ToolTip(this.components);
+            this.buttonTriggers = new System.Windows.Forms.Button();
             this.buttonExpand = new System.Windows.Forms.Button();
             this.dataGridViewRecordings = new System.Windows.Forms.DataGridView();
-            this.Recordings = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Indicator = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.textBoxNewRec = new System.Windows.Forms.TextBox();
             this.buttonAddRec = new System.Windows.Forms.Button();
             this.contextMenuStripRClick = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.refreshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.buttonTriggers = new System.Windows.Forms.Button();
+            this.Recordings = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Hotkey = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Indicator = new System.Windows.Forms.DataGridViewImageColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRecordings)).BeginInit();
             this.contextMenuStripRClick.SuspendLayout();
             this.SuspendLayout();
@@ -132,6 +135,17 @@ namespace ElegantRecorder
             this.buttonSettings.UseVisualStyleBackColor = true;
             this.buttonSettings.Click += new System.EventHandler(this.buttonSettings_Click);
             // 
+            // buttonTriggers
+            // 
+            this.buttonTriggers.Image = global::ElegantRecorder.Properties.Resources.stopwatch;
+            this.buttonTriggers.Location = new System.Drawing.Point(320, 12);
+            this.buttonTriggers.Name = "buttonTriggers";
+            this.buttonTriggers.Size = new System.Drawing.Size(49, 48);
+            this.buttonTriggers.TabIndex = 22;
+            this.toolTipRec.SetToolTip(this.buttonTriggers, "Triggers");
+            this.buttonTriggers.UseVisualStyleBackColor = true;
+            this.buttonTriggers.Click += new System.EventHandler(this.buttonTriggers_Click);
+            // 
             // buttonExpand
             // 
             this.buttonExpand.FlatAppearance.BorderSize = 0;
@@ -160,15 +174,16 @@ namespace ElegantRecorder
             this.dataGridViewRecordings.ColumnHeadersVisible = false;
             this.dataGridViewRecordings.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.Recordings,
+            this.Hotkey,
             this.Indicator});
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Window;
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.ControlText;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.ControlDark;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dataGridViewRecordings.DefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle3.BackColor = System.Drawing.SystemColors.Window;
+            dataGridViewCellStyle3.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.ControlText;
+            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.ControlDark;
+            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dataGridViewRecordings.DefaultCellStyle = dataGridViewCellStyle3;
             this.dataGridViewRecordings.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically;
             this.dataGridViewRecordings.Location = new System.Drawing.Point(12, 120);
             this.dataGridViewRecordings.MultiSelect = false;
@@ -181,19 +196,6 @@ namespace ElegantRecorder
             this.dataGridViewRecordings.SelectionChanged += new System.EventHandler(this.dataGridViewRecordings_SelectionChanged);
             this.dataGridViewRecordings.KeyDown += new System.Windows.Forms.KeyEventHandler(this.dataGridViewRecordings_KeyDown);
             this.dataGridViewRecordings.MouseDown += new System.Windows.Forms.MouseEventHandler(this.dataGridViewRecordings_MouseDown);
-            // 
-            // Recordings
-            // 
-            this.Recordings.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.Recordings.FillWeight = 176.6497F;
-            this.Recordings.HeaderText = "Recordings";
-            this.Recordings.Name = "Recordings";
-            // 
-            // Indicator
-            // 
-            this.Indicator.FillWeight = 23.35025F;
-            this.Indicator.HeaderText = "Indicator";
-            this.Indicator.Name = "Indicator";
             // 
             // textBoxNewRec
             // 
@@ -248,16 +250,30 @@ namespace ElegantRecorder
             this.deleteToolStripMenuItem.Text = "Delete";
             this.deleteToolStripMenuItem.Click += new System.EventHandler(this.deleteToolStripMenuItem_Click);
             // 
-            // buttonTriggers
+            // Recordings
             // 
-            this.buttonTriggers.Image = global::ElegantRecorder.Properties.Resources.stopwatch;
-            this.buttonTriggers.Location = new System.Drawing.Point(320, 12);
-            this.buttonTriggers.Name = "buttonTriggers";
-            this.buttonTriggers.Size = new System.Drawing.Size(49, 48);
-            this.buttonTriggers.TabIndex = 22;
-            this.toolTipRec.SetToolTip(this.buttonTriggers, "Triggers");
-            this.buttonTriggers.UseVisualStyleBackColor = true;
-            this.buttonTriggers.Click += new System.EventHandler(this.buttonTriggers_Click);
+            this.Recordings.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.Recordings.DefaultCellStyle = dataGridViewCellStyle1;
+            this.Recordings.FillWeight = 197.7221F;
+            this.Recordings.HeaderText = "Recordings";
+            this.Recordings.Name = "Recordings";
+            // 
+            // Hotkey
+            // 
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.Hotkey.DefaultCellStyle = dataGridViewCellStyle2;
+            this.Hotkey.FillWeight = 76.14212F;
+            this.Hotkey.HeaderText = "Hotkey";
+            this.Hotkey.Name = "Hotkey";
+            // 
+            // Indicator
+            // 
+            this.Indicator.FillWeight = 26.13569F;
+            this.Indicator.HeaderText = "Indicator";
+            this.Indicator.Name = "Indicator";
+            this.Indicator.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.Indicator.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
             // 
             // ElegantRecorder
             // 
@@ -300,12 +316,13 @@ namespace ElegantRecorder
         private DataGridView dataGridViewRecordings;
         private TextBox textBoxNewRec;
         private Button buttonAddRec;
-        private DataGridViewTextBoxColumn Recordings;
-        private DataGridViewTextBoxColumn Indicator;
         private ContextMenuStrip contextMenuStripRClick;
         private ToolStripMenuItem refreshToolStripMenuItem;
         private ToolStripMenuItem renameToolStripMenuItem;
         private ToolStripMenuItem deleteToolStripMenuItem;
         private Button buttonTriggers;
+        private DataGridViewTextBoxColumn Recordings;
+        private DataGridViewTextBoxColumn Hotkey;
+        private DataGridViewImageColumn Indicator;
     }
 }

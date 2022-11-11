@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Windows.Forms;
 using ElegantRecorder.Properties;
@@ -17,7 +18,8 @@ namespace ElegantRecorder
         public WinAPI WinAPI;
         public AutomationEngine AutomationEngine;
 
-        public List<UIAction> UISteps = new List<UIAction>();
+        public Dictionary<string, Recording> RecHeaders = new();
+        public List<UIAction> UISteps = new();
 
         public string CurrentRecordingName = "";
 
@@ -27,16 +29,16 @@ namespace ElegantRecorder
         private Stopwatch stopwatch = new Stopwatch();
 
         public int CurrentHotkeyId = 8;
-        public Dictionary<int, string> RecHotkeys = new Dictionary<int, string>();
+        public Dictionary<int, string> RecHotkeys = new();
 
         public ElegantRecorder()
         {
             InitializeComponent();
 
-            ReadOrCreateConfig();
-            ReadCurrentRecordings();
-
             WinAPI = new WinAPI(this);
+
+            ReadOrCreateConfig();
+            ReadRecordingHeaders();
 
             AutomationEngine = null;
 
@@ -100,19 +102,39 @@ namespace ElegantRecorder
             }
         }
 
-        public void ReadCurrentRecordings()
+        public void ReadRecordingHeaders()
         {
             dataGridViewRecordings.Rows.Clear();
+            RecHeaders.Clear();
 
-            foreach (var file in Directory.GetFiles(ElegantOptions.DataFolder))
+            foreach (var file in Directory.GetFiles(ElegantOptions.DataFolder, "*.json"))
             {
-                using StreamReader stream = new StreamReader(file);
-                char[] buffer = new char[32];
+                using FileStream stream = new FileStream(file, FileMode.Open);
+                byte[] buffer = new byte[32];
                 stream.Read(buffer, 0, 32);
 
-                if ((new string(buffer)).Contains(Recording.DefaultTag))
+                if (Encoding.UTF8.GetString(buffer).Contains(Recording.DefaultTag))
                 {
-                    dataGridViewRecordings.Rows.Add(Path.GetFileNameWithoutExtension(file), "");
+                    stream.Position = 0;
+
+                    var tag = "\"UIActions\":";
+                    string header = Recording.ReadUntil(stream, "\"UIActions\":");
+                    header += tag + "[]}";
+
+                    string recName = Path.GetFileNameWithoutExtension(file);
+                    var rec = new Recording(this, recName);
+                    rec.Deserialize(header);
+                    RecHeaders.Add(recName, rec);
+
+                    string hotkeyStr = "";
+                    if (rec.Triggers.Hotkey != 0)
+                    {
+                        hotkeyStr = WinAPI.HotkeyToStr(rec.Triggers.Hotkey);
+                    }
+
+                    dataGridViewRecordings.Rows.Add(recName, hotkeyStr, rec.Encrypted ? Resources.lock_edit : Resources.empty);
+
+                    rec.ArmTriggers();
                 }
             }
 
@@ -604,7 +626,7 @@ namespace ElegantRecorder
                     var currentFile = Path.Combine(ElegantOptions.DataFolder, CurrentRecordingName + ".json");
                     File.Delete(currentFile);
 
-                    ReadCurrentRecordings();
+                    ReadRecordingHeaders();
                 }
             }
         }
@@ -646,7 +668,7 @@ namespace ElegantRecorder
 
         private void refreshToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            ReadCurrentRecordings();
+            ReadRecordingHeaders();
         }
 
         private void deleteToolStripMenuItem_Click(object sender, EventArgs e)

@@ -46,35 +46,10 @@ namespace ElegantRecorder
             Rec.Triggers.FilePath = textBoxFileName.Text;
 
             Rec.Save(false);
-
-            ArmTriggers();
+            Rec.ArmTriggers();
         }
 
-        private void ArmTriggers()
-        {
-            if (Rec.Triggers.HotkeyEnabled)
-            {
-                if (App.RecHotkeys.ContainsValue(Rec.Name))
-                {
-                    var hotkeyId = App.RecHotkeys.FirstOrDefault(x => x.Value == Rec.Name).Key;
-                    App.WinAPI.UnregisterTriggerHotkey(hotkeyId);
-                    App.RecHotkeys.Remove(hotkeyId);
-                }
-
-                App.CurrentHotkeyId++;
-                App.WinAPI.RegisterTriggerHotkey(hotkeyData);
-                App.RecHotkeys.Add(App.CurrentHotkeyId, Rec.Name);
-            }
-            else
-            {
-                if (App.RecHotkeys.ContainsValue(Rec.Name))
-                {
-                    var hotkeyId = App.RecHotkeys.FirstOrDefault(x => x.Value == Rec.Name).Key;
-                    App.WinAPI.UnregisterTriggerHotkey(hotkeyId);
-                    App.RecHotkeys.Remove(hotkeyId);
-                }
-            }
-        }
+        
 
         private void EnableControls()
         {

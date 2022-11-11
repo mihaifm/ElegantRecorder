@@ -1,7 +1,5 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Windows.Forms;
 
 namespace ElegantRecorder
@@ -63,7 +61,7 @@ namespace ElegantRecorder
             App.ElegantOptions.Save(App.ConfigFilePath);
             Rec.Save(false);
 
-            App.ReadCurrentRecordings();
+            App.ReadRecordingHeaders();
         }
 
         private void ChangeAutomationEngine()

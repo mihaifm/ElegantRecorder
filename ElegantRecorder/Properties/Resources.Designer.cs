@@ -83,6 +83,16 @@ namespace ElegantRecorder.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap empty {
+            get {
+                object obj = ResourceManager.GetObject("empty", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap gear {
             get {
                 object obj = ResourceManager.GetObject("gear", resourceCulture);
@@ -106,6 +116,16 @@ namespace ElegantRecorder.Properties {
         internal static System.Drawing.Bitmap geo_edit {
             get {
                 object obj = ResourceManager.GetObject("geo_edit", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap lock_edit {
+            get {
+                object obj = ResourceManager.GetObject("lock_edit", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
