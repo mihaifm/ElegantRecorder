@@ -147,14 +147,12 @@ namespace ElegantRecorder
             dataGridViewRecordings.Rows[0].Selected = true;
         }
 
-        private const int mouseMoveThreshold = 30;
-
         public void RecordMouseMove(MouseHookStruct currentMouseHookStruct)
         {
             if (!ElegantOptions.RecordMouseMove)
                 return;
 
-            if (stopwatch.IsRunning && stopwatch.ElapsedMilliseconds < mouseMoveThreshold && UISteps.Count > 0)
+            if (stopwatch.IsRunning && stopwatch.ElapsedMilliseconds < ElegantOptions.MouseMoveDelay && UISteps.Count > 0)
                 return;
 
             UIAction uiAction = new UIAction();

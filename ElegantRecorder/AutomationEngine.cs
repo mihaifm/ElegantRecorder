@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Windows;
 using System.Windows.Forms;
 
 namespace ElegantRecorder
@@ -17,9 +18,21 @@ namespace ElegantRecorder
 
         public virtual bool FillMouseMoveAction(ref UIAction uiAction, ref string status, MouseHookStruct currentMouseHookStruct)
         {
+            var point = new System.Drawing.Point(currentMouseHookStruct.pt.x, currentMouseHookStruct.pt.y);
+
+            IntPtr activeWinHwnd = App.WinAPI.GetActiveWin();
+
+            RECT boundingRect = new RECT();
+
+            if (App.ElegantOptions.MouseMoveRelative)
+            {
+                if (activeWinHwnd != IntPtr.Zero)
+                    boundingRect = App.WinAPI.GetBoundingRect(activeWinHwnd);
+            }
+
             uiAction.EventType = "mousemove";
-            uiAction.OffsetX = currentMouseHookStruct.pt.x;
-            uiAction.OffsetY = currentMouseHookStruct.pt.y;
+            uiAction.OffsetX = point.X - boundingRect.Left;
+            uiAction.OffsetY = point.Y - boundingRect.Top;
             uiAction.ExtraInfo = (long)currentMouseHookStruct.dwExtraInfo;
             uiAction.Flags = currentMouseHookStruct.flags;
 
@@ -100,18 +113,30 @@ namespace ElegantRecorder
 
         public virtual bool ReplayMouseMoveAction(UIAction action, ref string status)
         {
-            App.WinAPI.MouseMove((int)action.OffsetX, (int)action.OffsetY, (UIntPtr)action.ExtraInfo);
+            IntPtr activeWinHwnd = App.WinAPI.GetActiveWin();
+
+            RECT boundingRect = new RECT();
+
+            if (App.ElegantOptions.MouseMoveRelative && activeWinHwnd != IntPtr.Zero)
+            {
+                boundingRect = App.WinAPI.GetBoundingRect(activeWinHwnd);
+            }
+
+            var x = boundingRect.Left + (int) action.OffsetX;
+            var y = boundingRect.Top + (int) action.OffsetY;
+
+            App.WinAPI.MouseMove(x, y, (UIntPtr)action.ExtraInfo);
             return true;
         }
 
         Timer mousePathTimer = null;
         int currentMousePathStep = -1;
         UIAction mousePathAction = null;
+        RECT activeWinRect = new RECT();
 
         public virtual bool ReplayMousePathAction(UIAction action, ref string status)
         {
             mousePathAction = action;
-
             currentMousePathStep = -1;
 
             mousePathTimer = new Timer();
@@ -147,8 +172,20 @@ namespace ElegantRecorder
 
         private void MousePathTimer_Tick(object? sender, EventArgs e)
         {
+            if (App.ElegantOptions.MouseMoveRelative)
+            {
+                if (currentMousePathStep == 0)
+                {
+                    IntPtr activeWinHwnd = App.WinAPI.GetActiveWin();
+                    if (activeWinHwnd != IntPtr.Zero)
+                    {
+                        activeWinRect = App.WinAPI.GetBoundingRect(activeWinHwnd);
+                    }
+                }
+            }
+
             var m = mousePathAction.MoveData[currentMousePathStep];
-            App.WinAPI.MouseMove(m.X, m.Y, UIntPtr.Zero);
+            App.WinAPI.MouseMove(activeWinRect.Left + m.X, activeWinRect.Top + m.Y, UIntPtr.Zero);
 
             PlayMousePathStep();
         }

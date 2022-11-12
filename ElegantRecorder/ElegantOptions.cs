@@ -8,15 +8,21 @@ namespace ElegantRecorder
     {
         public static int DefaultFormHeight = 127;
 
+        //general options 
+
         public int RecordHotkey { get; set; }
         public int StopHotkey { get; set; }
         public bool RecordMouseMove { get; set; }
+        public bool MouseMoveRelative { get; set; }
+        public int MouseMoveDelay { get; set; }
         public bool RecordClipboard { get; set; }
         public string AutomationEngine { get; set; }
         public string DataFolder { get; set; }
         public bool ExpandedUI { get; set; }
         public int FormHeight { get; set; }
         public int DataGridHeight { get; set; }
+
+        //recording specific options
 
         [JsonIgnore]
         public string PlaybackSpeed { get; set; }
@@ -37,6 +43,8 @@ namespace ElegantRecorder
             RecordHotkey = 0;
             StopHotkey = 0;
             RecordMouseMove = false;
+            MouseMoveRelative = false;
+            MouseMoveDelay = 30;
             RecordClipboard = false;
             RestrictToExe = false;
             ExePath = "";

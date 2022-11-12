@@ -57,18 +57,18 @@ namespace ElegantRecorder
                     return false;
             }
 
-            Rect boundingRect;
+            RECT boundingRect;
 
             if (topLevelWindowName.Length != 0)
                 boundingRect = App.WinAPI.GetBoundingRect(topLevelWindow);
             else
-                boundingRect = new Rect(0, 0, 0, 0);
+                boundingRect = new RECT();
 
 
             uiAction.EventType = "click";
             uiAction.TopLevelWindow = topLevelWindowName;
-            uiAction.OffsetX = (int)(point.X - boundingRect.X);
-            uiAction.OffsetY = (int)(point.Y - boundingRect.Y);
+            uiAction.OffsetX = point.X - boundingRect.Left;
+            uiAction.OffsetY = point.Y - boundingRect.Top;
             uiAction.ExtraInfo = (long)currentMouseHookStruct.dwExtraInfo;
             uiAction.Flags = (int)currentMouseHookStruct.flags;
 
@@ -93,12 +93,12 @@ namespace ElegantRecorder
                 }
             }
 
-            Rect windowRect = App.WinAPI.GetBoundingRect(topLevelWindow);
+            RECT windowRect = App.WinAPI.GetBoundingRect(topLevelWindow);
 
-            var x = (int)windowRect.X + action.OffsetX;
-            var y = (int)windowRect.Y + action.OffsetY;
+            var x = windowRect.Left + (int) action.OffsetX;
+            var y = windowRect.Top + (int) action.OffsetY;
 
-            App.WinAPI.MouseClick((int)x, (int)y, (uint)action.Flags, (UIntPtr)action.ExtraInfo);
+            App.WinAPI.MouseClick(x, y, (uint)action.Flags, (UIntPtr)action.ExtraInfo);
 
             return true;
         }

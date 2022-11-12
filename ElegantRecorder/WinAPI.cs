@@ -145,6 +145,12 @@ namespace ElegantRecorder
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
+        [DllImport("user32.dll")]
+        static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        static extern IntPtr GetActiveWindow();
+
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool AddClipboardFormatListener(IntPtr hwnd);
@@ -323,6 +329,12 @@ namespace ElegantRecorder
             return IntPtr.Zero;
         }
 
+        public IntPtr GetActiveWin()
+        {
+            return GetForegroundWindow();
+            //return WinAPI.GetActiveWindow();
+        }
+
         public string GetWindowName(IntPtr hwnd)
         {
             if (hwnd != IntPtr.Zero)
@@ -344,12 +356,13 @@ namespace ElegantRecorder
             return (int) pid;
         }
 
-        public System.Windows.Rect GetBoundingRect(IntPtr hwnd)
+        public RECT GetBoundingRect(IntPtr hwnd)
         {
             RECT rect;
             GetWindowRect(hwnd, out rect);
 
-            return new System.Windows.Rect { X = rect.Left, Y = rect.Top, Width = rect.Right, Height = rect.Bottom };
+            //return new System.Windows.Rect { X = rect.Left, Y = rect.Top, Width = rect.Right, Height = rect.Bottom };
+            return rect;
         }
 
         public bool ProcessClipboardMessage(int message, ref string clipboardText)

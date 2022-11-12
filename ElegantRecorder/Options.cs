@@ -21,6 +21,8 @@ namespace ElegantRecorder
             Rec.Load();
 
             checkBoxRecMouseMove.Checked = App.ElegantOptions.RecordMouseMove;
+            checkBoxMouseMoveRelative.Checked = App.ElegantOptions.MouseMoveRelative;
+            textBoxMouseMoveDelay.Text = App.ElegantOptions.MouseMoveDelay.ToString();
             checkBoxRecClipboard.Checked = App.ElegantOptions.RecordClipboard;
             textBoxDataFolder.Text = App.ElegantOptions.DataFolder;
             comboBoxAutomationEngine.SelectedItem = App.ElegantOptions.AutomationEngine;
@@ -44,6 +46,17 @@ namespace ElegantRecorder
         public void SaveOptions()
         {
             App.ElegantOptions.RecordMouseMove = checkBoxRecMouseMove.Checked;
+            App.ElegantOptions.MouseMoveRelative = checkBoxMouseMoveRelative.Checked;
+
+            try
+            {
+                App.ElegantOptions.MouseMoveDelay = int.Parse(textBoxMouseMoveDelay.Text);
+            }
+            catch
+            {
+                App.ElegantOptions.MouseMoveDelay = 30;
+            }
+
             App.ElegantOptions.RecordClipboard = checkBoxRecClipboard.Checked;
             App.ElegantOptions.DataFolder = textBoxDataFolder.Text;
             App.ElegantOptions.AutomationEngine = comboBoxAutomationEngine.SelectedItem as string;
@@ -183,6 +196,14 @@ namespace ElegantRecorder
         public void RenameFocus()
         {
             textBoxCurrRecName.Focus();
+        }
+
+        private void checkBoxRecMouseMove_CheckedChanged(object sender, EventArgs e)
+        {
+            checkBoxMouseMoveRelative.Enabled = checkBoxRecMouseMove.Checked;
+            textBoxMouseMoveDelay.Enabled = checkBoxRecMouseMove.Checked;
+            labelMinEventDelay.Enabled = checkBoxRecMouseMove.Checked;
+            labelMs.Enabled = checkBoxRecMouseMove.Checked;
         }
     }
 }
