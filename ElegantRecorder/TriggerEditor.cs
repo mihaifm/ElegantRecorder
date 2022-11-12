@@ -29,6 +29,8 @@ namespace ElegantRecorder
             textBoxWindowName.Text = Rec.Triggers.WindowName;
             checkBoxFile.Checked = Rec.Triggers.FileEnabled;
             textBoxFileName.Text = Rec.Triggers.FilePath;
+            checkBoxRecording.Checked = Rec.Triggers.RecordingEnabled;
+            textBoxRecordingName.Text = Rec.Triggers.RecordingName;
 
             EnableControls();
         }
@@ -44,12 +46,13 @@ namespace ElegantRecorder
             Rec.Triggers.WindowName = textBoxWindowName.Text;
             Rec.Triggers.FileEnabled = checkBoxFile.Checked;
             Rec.Triggers.FilePath = textBoxFileName.Text;
+            Rec.Triggers.RecordingEnabled = checkBoxRecording.Checked;
+            Rec.Triggers.RecordingName = textBoxRecordingName.Text;
 
             Rec.Save(false);
+            Rec.DisarmTriggers();
             Rec.ArmTriggers();
         }
-
-        
 
         private void EnableControls()
         {
@@ -59,6 +62,8 @@ namespace ElegantRecorder
             dateTimePickerTime.Enabled = checkBoxTime.Checked;
             textBoxWindowName.Enabled = checkBoxWindow.Checked;
             textBoxFileName.Enabled = checkBoxFile.Checked;
+            buttonBrowseFile.Enabled = checkBoxFile.Checked;
+            textBoxRecordingName.Enabled = checkBoxRecording.Checked;
         }
 
         private void buttonCancel_Click(object sender, EventArgs e)
@@ -79,6 +84,12 @@ namespace ElegantRecorder
 
         private void checkBoxTime_CheckedChanged(object sender, EventArgs e)
         {
+            if (checkBoxTime.Checked)
+            {
+                dateTimePickerDate.Value = DateTime.Now;
+                dateTimePickerTime.Value = DateTime.Now;
+            }
+
             EnableControls();
         }
 
@@ -88,6 +99,11 @@ namespace ElegantRecorder
         }
 
         private void checkBoxFile_CheckedChanged(object sender, EventArgs e)
+        {
+            EnableControls();
+        }
+
+        private void checkBoxRecording_CheckedChanged(object sender, EventArgs e)
         {
             EnableControls();
         }
@@ -117,6 +133,17 @@ namespace ElegantRecorder
         {
             textBoxHotkey.Text = Keys.None.ToString();
             hotkeyData = (int)Keys.None;
+        }
+
+        private void buttonBrowseFile_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog();
+            dialog.Filter = "All files (*.*)|*.*";
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                textBoxFileName.Text = dialog.FileName;
+            }
         }
     }
 }

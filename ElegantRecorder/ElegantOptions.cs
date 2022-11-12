@@ -56,6 +56,9 @@ namespace ElegantRecorder
 
         public static int GetPlaybackSpeed(string playbackSpeed, double? initialDuration)
         {
+            if (initialDuration == null)
+                return 0;
+
             switch(playbackSpeed)
             {
                 case "Fastest":

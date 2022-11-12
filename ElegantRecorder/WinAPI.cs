@@ -428,7 +428,7 @@ namespace ElegantRecorder
             if (hotkey != 0)
             {
                 GetModifiers((Keys)hotkey, out var key, out var modifiers);
-                RegisterHotKey(App.Handle, App.CurrentHotkeyId, modifiers, key);
+                RegisterHotKey(App.Handle, App.TriggerData.CurrentHotkeyId, modifiers, key);
             }
         }
 
@@ -452,9 +452,9 @@ namespace ElegantRecorder
                     App.Stop(false);
                 }
 
-                if (App.RecHotkeys.ContainsKey(id))
+                if (App.TriggerData.RecHotkeys.ContainsKey(id))
                 {
-                    App.Replay(App.RecHotkeys[id]);
+                    App.Replay(App.TriggerData.RecHotkeys[id]);
                 }
             }
         }

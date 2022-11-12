@@ -38,7 +38,7 @@
             this.textBoxWindowName = new System.Windows.Forms.TextBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.checkBoxFile = new System.Windows.Forms.CheckBox();
-            this.button3 = new System.Windows.Forms.Button();
+            this.buttonBrowseFile = new System.Windows.Forms.Button();
             this.textBoxFileName = new System.Windows.Forms.TextBox();
             this.buttonOk = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
@@ -46,10 +46,14 @@
             this.checkBoxTime = new System.Windows.Forms.CheckBox();
             this.dateTimePickerTime = new System.Windows.Forms.DateTimePicker();
             this.dateTimePickerDate = new System.Windows.Forms.DateTimePicker();
+            this.groupBox5 = new System.Windows.Forms.GroupBox();
+            this.textBoxRecordingName = new System.Windows.Forms.TextBox();
+            this.checkBoxRecording = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
+            this.groupBox5.SuspendLayout();
             this.SuspendLayout();
             // 
             // groupBox1
@@ -130,7 +134,7 @@
             this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox3.Controls.Add(this.checkBoxFile);
-            this.groupBox3.Controls.Add(this.button3);
+            this.groupBox3.Controls.Add(this.buttonBrowseFile);
             this.groupBox3.Controls.Add(this.textBoxFileName);
             this.groupBox3.Location = new System.Drawing.Point(12, 224);
             this.groupBox3.Name = "groupBox3";
@@ -149,14 +153,15 @@
             this.checkBoxFile.UseVisualStyleBackColor = true;
             this.checkBoxFile.CheckedChanged += new System.EventHandler(this.checkBoxFile_CheckedChanged);
             // 
-            // button3
+            // buttonBrowseFile
             // 
-            this.button3.Location = new System.Drawing.Point(413, 25);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(59, 23);
-            this.button3.TabIndex = 2;
-            this.button3.Text = "...";
-            this.button3.UseVisualStyleBackColor = true;
+            this.buttonBrowseFile.Location = new System.Drawing.Point(413, 25);
+            this.buttonBrowseFile.Name = "buttonBrowseFile";
+            this.buttonBrowseFile.Size = new System.Drawing.Size(59, 23);
+            this.buttonBrowseFile.TabIndex = 2;
+            this.buttonBrowseFile.Text = "...";
+            this.buttonBrowseFile.UseVisualStyleBackColor = true;
+            this.buttonBrowseFile.Click += new System.EventHandler(this.buttonBrowseFile_Click);
             // 
             // textBoxFileName
             // 
@@ -168,7 +173,7 @@
             // buttonOk
             // 
             this.buttonOk.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonOk.Location = new System.Drawing.Point(338, 304);
+            this.buttonOk.Location = new System.Drawing.Point(338, 374);
             this.buttonOk.Name = "buttonOk";
             this.buttonOk.Size = new System.Drawing.Size(75, 23);
             this.buttonOk.TabIndex = 3;
@@ -179,7 +184,7 @@
             // buttonCancel
             // 
             this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonCancel.Location = new System.Drawing.Point(419, 304);
+            this.buttonCancel.Location = new System.Drawing.Point(419, 374);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
             this.buttonCancel.TabIndex = 4;
@@ -192,7 +197,6 @@
             this.groupBox4.Controls.Add(this.checkBoxTime);
             this.groupBox4.Controls.Add(this.dateTimePickerTime);
             this.groupBox4.Controls.Add(this.dateTimePickerDate);
-            this.groupBox4.Enabled = false;
             this.groupBox4.Location = new System.Drawing.Point(12, 84);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Size = new System.Drawing.Size(482, 64);
@@ -226,11 +230,41 @@
             this.dateTimePickerDate.Size = new System.Drawing.Size(147, 23);
             this.dateTimePickerDate.TabIndex = 0;
             // 
+            // groupBox5
+            // 
+            this.groupBox5.Controls.Add(this.textBoxRecordingName);
+            this.groupBox5.Controls.Add(this.checkBoxRecording);
+            this.groupBox5.Location = new System.Drawing.Point(12, 300);
+            this.groupBox5.Name = "groupBox5";
+            this.groupBox5.Size = new System.Drawing.Size(482, 68);
+            this.groupBox5.TabIndex = 6;
+            this.groupBox5.TabStop = false;
+            // 
+            // textBoxRecordingName
+            // 
+            this.textBoxRecordingName.Location = new System.Drawing.Point(119, 26);
+            this.textBoxRecordingName.Name = "textBoxRecordingName";
+            this.textBoxRecordingName.Size = new System.Drawing.Size(288, 23);
+            this.textBoxRecordingName.TabIndex = 1;
+            // 
+            // checkBoxRecording
+            // 
+            this.checkBoxRecording.AutoSize = true;
+            this.checkBoxRecording.Location = new System.Drawing.Point(10, 28);
+            this.checkBoxRecording.Name = "checkBoxRecording";
+            this.checkBoxRecording.Size = new System.Drawing.Size(80, 19);
+            this.checkBoxRecording.TabIndex = 0;
+            this.checkBoxRecording.Text = "Recording";
+            this.checkBoxRecording.UseVisualStyleBackColor = true;
+            this.checkBoxRecording.CheckedChanged += new System.EventHandler(this.checkBoxRecording_CheckedChanged);
+            // 
             // TriggerEditor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(506, 339);
+            this.BackColor = System.Drawing.SystemColors.Control;
+            this.ClientSize = new System.Drawing.Size(506, 409);
+            this.Controls.Add(this.groupBox5);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.buttonOk);
@@ -249,6 +283,8 @@
             this.groupBox3.PerformLayout();
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
+            this.groupBox5.ResumeLayout(false);
+            this.groupBox5.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -262,7 +298,7 @@
         private System.Windows.Forms.Button buttonCancel;
         private System.Windows.Forms.TextBox textBoxHotkey;
         private System.Windows.Forms.TextBox textBoxWindowName;
-        private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.Button buttonBrowseFile;
         private System.Windows.Forms.TextBox textBoxFileName;
         private System.Windows.Forms.Button buttonClearHotkey;
         private System.Windows.Forms.GroupBox groupBox4;
@@ -272,5 +308,8 @@
         private System.Windows.Forms.CheckBox checkBoxTime;
         private System.Windows.Forms.CheckBox checkBoxWindow;
         private System.Windows.Forms.CheckBox checkBoxFile;
+        private System.Windows.Forms.GroupBox groupBox5;
+        private System.Windows.Forms.CheckBox checkBoxRecording;
+        private System.Windows.Forms.TextBox textBoxRecordingName;
     }
 }

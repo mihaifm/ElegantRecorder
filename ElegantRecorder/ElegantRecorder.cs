@@ -17,6 +17,7 @@ namespace ElegantRecorder
         public ElegantOptions ElegantOptions;
         public WinAPI WinAPI;
         public AutomationEngine AutomationEngine;
+        public TriggerData TriggerData;
 
         public Dictionary<string, Recording> RecHeaders = new();
         public List<UIAction> UISteps = new();
@@ -28,14 +29,12 @@ namespace ElegantRecorder
         private string status;
         private Stopwatch stopwatch = new Stopwatch();
 
-        public int CurrentHotkeyId = 8;
-        public Dictionary<int, string> RecHotkeys = new();
-
         public ElegantRecorder()
         {
             InitializeComponent();
 
             WinAPI = new WinAPI(this);
+            TriggerData = new TriggerData(this);
 
             ReadOrCreateConfig();
             ReadRecordingHeaders();
@@ -104,6 +103,9 @@ namespace ElegantRecorder
 
         public void ReadRecordingHeaders()
         {
+            foreach (var rec in RecHeaders.Values)
+                rec.DisarmTriggers();
+
             dataGridViewRecordings.Rows.Clear();
             RecHeaders.Clear();
 
@@ -440,9 +442,11 @@ namespace ElegantRecorder
 
             if (currentActionIndex <= ReplayRec.UIActions.Length - 1)
             {
-                if (ReplayRec.UIActions[currentActionIndex].elapsed != null && ReplayRec.UIActions[currentActionIndex].elapsed != 0)
+                var elapsed = ElegantOptions.GetPlaybackSpeed(ReplayRec.PlaybackSpeed, ReplayRec.UIActions[currentActionIndex].elapsed);
+
+                if (elapsed != 0)
                 {
-                    replayTimer.Interval = ElegantOptions.GetPlaybackSpeed(ReplayRec.PlaybackSpeed, ReplayRec.UIActions[currentActionIndex].elapsed);
+                    replayTimer.Interval = elapsed;
                     replayTimer.Start();
                 }
                 else
@@ -454,6 +458,7 @@ namespace ElegantRecorder
             {
                 SetStatus("Replay finished");
                 ResetButtons();
+                TriggerData.TriggerNewRecording(ReplayRec.Name);
             }
         }
 
@@ -465,7 +470,7 @@ namespace ElegantRecorder
         private void buttonSettings_Click(object sender, EventArgs e)
         {
             Options options = new Options(this);
-            options.Show();
+            options.ShowDialog();
         }
 
         private void buttonPin_Click(object sender, EventArgs e)
@@ -563,7 +568,7 @@ namespace ElegantRecorder
                 {
                     File.WriteAllText(rec.FilePath, JsonSerializer.Serialize(rec));
 
-                    dataGridViewRecordings.Rows.Add(textBoxNewRec.Text, "");
+                    dataGridViewRecordings.Rows.Add(textBoxNewRec.Text, "", Resources.empty);
                     textBoxNewRec.Text = "";
 
                     dataGridViewRecordings.Sort(new RowComparer(this));
@@ -571,6 +576,8 @@ namespace ElegantRecorder
                     dataGridViewRecordings.ClearSelection();
                     dataGridViewRecordings.CurrentCell = dataGridViewRecordings.Rows[0].Cells[0];
                     dataGridViewRecordings.Rows[0].Selected = true;
+
+                    RecHeaders.Add(rec.Name, rec);
                 }
                 catch (Exception)
                 {
@@ -623,8 +630,10 @@ namespace ElegantRecorder
 
                 if (diag == DialogResult.OK)
                 {
-                    var currentFile = Path.Combine(ElegantOptions.DataFolder, CurrentRecordingName + ".json");
-                    File.Delete(currentFile);
+                    var tempRec = new Recording(this, CurrentRecordingName);
+                    tempRec.DisarmTriggers();
+
+                    File.Delete(tempRec.FilePath);
 
                     ReadRecordingHeaders();
                 }
@@ -679,14 +688,14 @@ namespace ElegantRecorder
         private void renameToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Options options = new Options(this);
-            options.Show();
+            options.ShowDialog();
             options.RenameFocus();
         }
 
         private void buttonTriggers_Click(object sender, EventArgs e)
         {
             var triggerEditor = new TriggerEditor(this);
-            triggerEditor.Show();
+            triggerEditor.ShowDialog();
         }
     }
 }

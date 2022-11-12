@@ -4,7 +4,6 @@ using System.Text.Json;
 using System;
 using System.Reflection;
 using System.Linq;
-using System.Windows;
 
 namespace ElegantRecorder
 {
@@ -38,6 +37,8 @@ namespace ElegantRecorder
             Name = name;
             App = app;
             UIActions = new UIAction[0];
+            Encrypted = false;
+            EncryptedActions = "";
             Tag = DefaultTag;
 
             PlaybackSpeed = "Normal";
@@ -45,10 +46,10 @@ namespace ElegantRecorder
             RestrictToExe = false;
             ExePath = "";
 
-            if (Name.Length > 0)
-                FilePath = Path.Combine(App.ElegantOptions.DataFolder, Name + ".json");
-            else
-                FilePath = "";
+            if (Name.Length == 0)
+                throw new Exception();
+
+            FilePath = Path.Combine(App.ElegantOptions.DataFolder, Name + ".json");
 
             Triggers = new Triggers();
         }
@@ -145,8 +146,8 @@ namespace ElegantRecorder
 
             SyncAppOptions(false);
 
-            if (FilePath.Length == 0)
-                return;
+            //if (FilePath.Length == 0)
+            //    return;
 
             try
             {
@@ -188,17 +189,28 @@ namespace ElegantRecorder
                         stream.Write(i != UIActions.Length - 1 ? ",\n" : "\n");
                     }
 
-                    stream.Write("]");
+                    stream.Write("],\n");
+
+                    stream.Write("\"EncryptedActions\":" + JsonSerializer.Serialize(EncryptedActions));
+
                     stream.Write("}");
+
                 }
             }
             catch (Exception)
             {
                 throw;
             }
+
+            if (App.RecHeaders.ContainsKey(Name))
+            {
+                DisarmTriggers();
+
+                App.RecHeaders[Name] = this;
+            }
         }
 
-        private void Rename()
+        public void Rename()
         {
             try
             {
@@ -222,25 +234,83 @@ namespace ElegantRecorder
         {
             if (Triggers.HotkeyEnabled)
             {
-                if (App.RecHotkeys.ContainsValue(Name))
+                if (Triggers.Hotkey != 0)
                 {
-                    var hotkeyId = App.RecHotkeys.FirstOrDefault(x => x.Value == Name).Key;
-                    App.WinAPI.UnregisterTriggerHotkey(hotkeyId);
-                    App.RecHotkeys.Remove(hotkeyId);
+                    App.TriggerData.CurrentHotkeyId++;
+                    App.WinAPI.RegisterTriggerHotkey(Triggers.Hotkey);
+                    App.TriggerData.RecHotkeys.Add(App.TriggerData.CurrentHotkeyId, Name);
                 }
-
-                App.CurrentHotkeyId++;
-                App.WinAPI.RegisterTriggerHotkey(Triggers.Hotkey);
-                App.RecHotkeys.Add(App.CurrentHotkeyId, Name);
             }
-            else
+
+            if (Triggers.FileEnabled)
             {
-                if (App.RecHotkeys.ContainsValue(Name))
+                if (App.TriggerData.RecFileTimers.ContainsKey(Name) == false)
                 {
-                    var hotkeyId = App.RecHotkeys.FirstOrDefault(x => x.Value == Name).Key;
-                    App.WinAPI.UnregisterTriggerHotkey(hotkeyId);
-                    App.RecHotkeys.Remove(hotkeyId);
+                    if (Triggers.FilePath.Length > 0)
+                        App.TriggerData.CreateFileTimer(this);
                 }
+            }
+
+            if (Triggers.WindowEnabled)
+            {
+                if (App.TriggerData.RecWindowTimers.ContainsKey(Name) == false)
+                {
+                    if (Triggers.WindowName.Length > 0)
+                        App.TriggerData.CreateWindowTimer(this);
+                }
+            }
+
+            if (Triggers.TimeEnabled)
+            {
+                if (App.TriggerData.RecTimeTimers.ContainsKey(Name) == false)
+                {
+                    App.TriggerData.CreateTimeTimers(this);
+                }
+            }
+
+            if (Triggers.RecordingEnabled)
+            {
+                if (App.TriggerData.RecRec.ContainsKey(Name) == false)
+                {
+                    if (Triggers.RecordingName.Length > 0)
+                    {
+                        App.TriggerData.RecRec.Add(Name, Triggers.RecordingName);
+                    }
+                }
+            }
+        }
+
+        public void DisarmTriggers()
+        {
+            if (App.TriggerData.RecHotkeys.ContainsValue(Name))
+            {
+                var hotkeyId = App.TriggerData.RecHotkeys.FirstOrDefault(x => x.Value == Name).Key;
+                App.WinAPI.UnregisterTriggerHotkey(hotkeyId);
+                App.TriggerData.RecHotkeys.Remove(hotkeyId);
+            }
+
+            if (App.TriggerData.RecFileTimers.ContainsKey(Name))
+            {
+                App.TriggerData.RecFileTimers[Name].Stop();
+                App.TriggerData.RecFileTimers.Remove(Name);
+            }
+
+            if (App.TriggerData.RecWindowTimers.ContainsKey(Name))
+            {
+                App.TriggerData.RecWindowTimers[Name].Stop();
+                App.TriggerData.RecWindowTimers.Remove(Name);
+                App.TriggerData.RecWindowStatus.Remove(Name);
+            }
+
+            if (App.TriggerData.RecTimeTimers.ContainsKey(Name))
+            {
+                App.TriggerData.RecTimeTimers[Name].Stop();
+                App.TriggerData.RecTimeTimers.Remove(Name);
+            }
+
+            if (App.TriggerData.RecRec.ContainsKey(Name))
+            {
+                App.TriggerData.RecRec.Remove(Name);
             }
         }
 

@@ -17,6 +17,9 @@ namespace ElegantRecorder
         public string FilePath { get; set; }
         public bool FileEnabled { get; set; }
 
+        public string RecordingName { get; set; }
+        public bool RecordingEnabled { get; set; }
+
         public Triggers()
         {
             Hotkey = 0;
@@ -28,6 +31,8 @@ namespace ElegantRecorder
             WindowEnabled = false;
             FilePath = "";
             FileEnabled = false;
+            RecordingName = "";
+            RecordingEnabled = false;
         }
     }
 }
