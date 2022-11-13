@@ -14,7 +14,7 @@ namespace ElegantRecorder
         public string ConfigFileName;
         public string ConfigFilePath;
 
-        public ElegantOptions ElegantOptions;
+        public Options Options;
         public WinAPI WinAPI;
         public AutomationEngine AutomationEngine;
         public TriggerData TriggerData;
@@ -24,10 +24,16 @@ namespace ElegantRecorder
 
         public string CurrentRecordingName = "";
 
-        private bool recording = false;
-        private bool replaying = false;
+        public bool Recording = false;
+        public bool Replaying = false;
+        public bool ReplayInterrupted = false;
+
         private string status;
         private Stopwatch stopwatch = new Stopwatch();
+
+        private int currentActionIndex = -1;
+        private Timer replayTimer = null;
+        private Recording ReplayRec = null;
 
         public ElegantRecorder()
         {
@@ -41,11 +47,11 @@ namespace ElegantRecorder
 
             AutomationEngine = null;
 
-            if (ElegantOptions.AutomationEngine == "Win32")
+            if (Options.AutomationEngine == "Win32")
             {
                 AutomationEngine = new Win32Engine(this);
             }
-            else if (ElegantOptions.AutomationEngine == "UI Automation")
+            else if (Options.AutomationEngine == "UI Automation")
             {
                 AutomationEngine = new UIAEngine(this);
             }
@@ -78,11 +84,11 @@ namespace ElegantRecorder
             {
                 try
                 {
-                    ElegantOptions = JsonSerializer.Deserialize<ElegantOptions>(File.ReadAllText(ConfigFilePath));
+                    Options = JsonSerializer.Deserialize<Options>(File.ReadAllText(ConfigFilePath));
                 }
-                catch (Exception ex)
+                catch
                 {
-                    MessageBox.Show("Failed to read configuratin file. " + ex.ToString());
+                    ElegantMessage.Info("Failed to read configuratin file");
                 }
             }
             else
@@ -91,12 +97,12 @@ namespace ElegantRecorder
                 {
                     File.Create(ConfigFilePath).Close();
 
-                    ElegantOptions = new ElegantOptions();
-                    File.WriteAllText(ConfigFilePath, JsonSerializer.Serialize(ElegantOptions));
+                    Options = new Options();
+                    File.WriteAllText(ConfigFilePath, JsonSerializer.Serialize(Options));
                 }
-                catch (Exception ex)
+                catch
                 {
-                    MessageBox.Show("Failed to create configuration file. " + ex.ToString());
+                    ElegantMessage.Info("Failed to create configuration file");
                 }
             }
         }
@@ -109,18 +115,18 @@ namespace ElegantRecorder
             dataGridViewRecordings.Rows.Clear();
             RecHeaders.Clear();
 
-            foreach (var file in Directory.GetFiles(ElegantOptions.DataFolder, "*.json"))
+            foreach (var file in Directory.GetFiles(Options.DataFolder, "*.json"))
             {
                 using FileStream stream = new FileStream(file, FileMode.Open);
                 byte[] buffer = new byte[32];
                 stream.Read(buffer, 0, 32);
 
-                if (Encoding.UTF8.GetString(buffer).Contains(Recording.DefaultTag))
+                if (Encoding.UTF8.GetString(buffer).Contains(global::ElegantRecorder.Recording.DefaultTag))
                 {
                     stream.Position = 0;
 
                     var tag = "\"UIActions\":";
-                    string header = Recording.ReadUntil(stream, "\"UIActions\":");
+                    string header = global::ElegantRecorder.Recording.ReadUntil(stream, "\"UIActions\":");
                     header += tag + "[]}";
 
                     string recName = Path.GetFileNameWithoutExtension(file);
@@ -149,10 +155,10 @@ namespace ElegantRecorder
 
         public void RecordMouseMove(MouseHookStruct currentMouseHookStruct)
         {
-            if (!ElegantOptions.RecordMouseMove)
+            if (!Options.RecordMouseMove)
                 return;
 
-            if (stopwatch.IsRunning && stopwatch.ElapsedMilliseconds < ElegantOptions.MouseMoveDelay && UISteps.Count > 0)
+            if (stopwatch.IsRunning && stopwatch.ElapsedMilliseconds < Options.MouseMoveDelay && UISteps.Count > 0)
                 return;
 
             UIAction uiAction = new UIAction();
@@ -248,11 +254,19 @@ namespace ElegantRecorder
 
         private void ResetButtons()
         {
-            recording = false;
-            replaying = false;
+            Recording = false;
+            Replaying = false;
             buttonRecord.Image = Resources.record_fill;
             buttonReplay.Image = Resources.play_fill;
             buttonPause.Image = Resources.pause_fill;
+            LockUI(false);
+        }
+
+        private void LockUI(bool disabled)
+        {
+            dataGridViewRecordings.Enabled = !disabled;
+            buttonAddRec.Enabled = !disabled;
+            textBoxNewRec.Enabled = !disabled;
         }
 
         private void buttonRecord_Click(object sender, EventArgs e)
@@ -262,14 +276,16 @@ namespace ElegantRecorder
 
         public void Record()
         {
-            if (recording || replaying)
+            if (Recording || Replaying)
                 return;
 
             ResetButtons();
             ClearStatus();
 
             buttonRecord.Image = Resources.record_edit;
-            recording = true;
+            Recording = true;
+
+            LockUI(true);
 
             if (CurrentRecordingName.Length == 0)
             {
@@ -281,14 +297,25 @@ namespace ElegantRecorder
             var rec = new Recording(this, CurrentRecordingName);
             rec.Load();
 
-            if (ElegantOptions.RestrictToExe == true && ElegantOptions.ExePath.Length == 0)
+            if (rec.RestrictToExe == true && rec.ExePath.Length == 0)
             {
                 SetStatus("Specify target executable");
                 ResetButtons();
                 return;
             }
 
-            if (ElegantOptions.RecordClipboard)
+            if (Options.PromptOverwrite && (rec.UIActions.Length > 0 || rec.EncryptedActions.Length > 0))
+            {
+                var diag = ElegantMessage.Show("Overwrite recording " + CurrentRecordingName + " ?");
+
+                if (diag != DialogResult.OK)
+                {
+                    ResetButtons();
+                    return;
+                }
+            }
+
+            if (Options.RecordClipboard)
             {
                 PreRecordClipboard();
             }
@@ -308,13 +335,13 @@ namespace ElegantRecorder
         {
             WinAPI.UninstallHooks();
 
-            replayInterrupted = true;
+            ReplayInterrupted = true;
 
             stopwatch.Reset();
 
             ClearStatus();
 
-            if (recording)
+            if (Recording)
             {
                 AutomationEngine.CompressMoveData();
                 AutomationEngine.CleanResidualKeys();
@@ -324,7 +351,7 @@ namespace ElegantRecorder
 
                 if (rec.Encrypted)
                 {
-                    var encPwd = new EncryptionPassword(true);
+                    var encPwd = new EncryptionPassword(true, TopMost);
                     encPwd.ShowDialog();
 
                     if (encPwd.DialogResult == DialogResult.OK)
@@ -353,7 +380,7 @@ namespace ElegantRecorder
             if (paused == false)
             {
                 UISteps.Clear();
-                currentActionIndex = 0;
+                currentActionIndex = -1;
             }
         }
 
@@ -362,22 +389,19 @@ namespace ElegantRecorder
             Replay(CurrentRecordingName);
         }
 
-        private int currentActionIndex = -1;
-        private Timer replayTimer = null;
-        private Recording ReplayRec = null;
-        private bool replayInterrupted = false;
-
         public void Replay(string recording)
         {
-            if (replaying)
+            if (Replaying)
                 return;
 
             ResetButtons();
             ClearStatus();
             buttonReplay.Image = Resources.play_edit;
 
-            replaying = true;
-            replayInterrupted = false;
+            Replaying = true;
+            ReplayInterrupted = false;
+
+            LockUI(true);
 
             if (recording != CurrentRecordingName)
             {
@@ -398,7 +422,7 @@ namespace ElegantRecorder
 
             if (ReplayRec.Encrypted)
             {
-                var encPwd = new EncryptionPassword(false);
+                var encPwd = new EncryptionPassword(false, TopMost);
                 encPwd.ShowDialog();
 
                 if (encPwd.DialogResult == DialogResult.OK)
@@ -423,16 +447,24 @@ namespace ElegantRecorder
 
             replayTimer = new Timer();
             replayTimer.Tick += ReplayTimer_Tick;
-            PlayAction();
+            PlayAction(true);
         }
 
-        public void PlayAction()
+        public void PlayAction(bool previousResult)
         {
             replayTimer.Stop();
 
-            if (replayInterrupted)
+            if (ReplayInterrupted)
             {
                 SetStatus("Replay interrupted");
+                return;
+            }
+
+            if (!previousResult)
+            {
+                SetStatus(status);
+                currentActionIndex = -1;
+                ResetButtons();
                 return;
             }
 
@@ -440,7 +472,7 @@ namespace ElegantRecorder
 
             if (currentActionIndex <= ReplayRec.UIActions.Length - 1)
             {
-                var elapsed = ElegantOptions.GetPlaybackSpeed(ReplayRec.PlaybackSpeed, ReplayRec.UIActions[currentActionIndex].elapsed);
+                var elapsed = Options.GetPlaybackSpeed(ReplayRec.PlaybackSpeed, ReplayRec.UIActions[currentActionIndex].elapsed);
 
                 if (elapsed != 0)
                 {
@@ -467,8 +499,11 @@ namespace ElegantRecorder
 
         private void buttonSettings_Click(object sender, EventArgs e)
         {
-            Options options = new Options(this);
-            options.ShowDialog();
+            if (Recording || Replaying)
+                return;
+
+            ElegantOptions elegantOptions = new ElegantOptions(this);
+            elegantOptions.ShowDialog();
         }
 
         private void buttonPin_Click(object sender, EventArgs e)
@@ -480,7 +515,7 @@ namespace ElegantRecorder
 
         private void buttonPause_MouseDown(object sender, MouseEventArgs e)
         {
-            if (!recording && !replaying)
+            if (!Recording && !Replaying)
                 return;
 
             Stop(true);
@@ -490,7 +525,7 @@ namespace ElegantRecorder
 
         protected override void WndProc(ref Message m)
         {
-            if (ElegantOptions.RecordClipboard)
+            if (Options.RecordClipboard)
             {
                 string clipboardText = "";
 
@@ -518,28 +553,28 @@ namespace ElegantRecorder
         {
             WinAPI.UnregisterGlobalHotkeys();
 
-            ElegantOptions.Save(ConfigFilePath);
+            Options.Save(ConfigFilePath);
         }
 
         private void buttonExpand_Click(object sender, EventArgs e)
         {
-            ElegantOptions.ExpandedUI = !ElegantOptions.ExpandedUI;
+            Options.ExpandedUI = !Options.ExpandedUI;
 
             ExpandUI();
         }
 
         private void ExpandUI()
         {
-            buttonExpand.Image = ElegantOptions.ExpandedUI ? Resources.double_up : Resources.double_down;
+            buttonExpand.Image = Options.ExpandedUI ? Resources.double_up : Resources.double_down;
 
-            if (ElegantOptions.ExpandedUI)
+            if (Options.ExpandedUI)
             {
-                Height = ElegantOptions.FormHeight;
-                dataGridViewRecordings.Height = ElegantOptions.DataGridHeight;
+                Height = Options.FormHeight;
+                dataGridViewRecordings.Height = Options.DataGridHeight;
             }
             else
             {
-                Height = ElegantOptions.DefaultFormHeight;
+                Height = Options.DefaultFormHeight;
             }
         }
 
@@ -605,8 +640,8 @@ namespace ElegantRecorder
 
             public int Compare(object x, object y)
             {
-                var file1 = Path.Combine(parent.ElegantOptions.DataFolder, (x as DataGridViewRow).Cells[0].Value + ".json");
-                var file2 = Path.Combine(parent.ElegantOptions.DataFolder, (y as DataGridViewRow).Cells[0].Value + ".json");
+                var file1 = Path.Combine(parent.Options.DataFolder, (x as DataGridViewRow).Cells[0].Value + ".json");
+                var file2 = Path.Combine(parent.Options.DataFolder, (y as DataGridViewRow).Cells[0].Value + ".json");
 
                 return File.GetLastWriteTime(file2).CompareTo(File.GetLastWriteTime(file1));
             }
@@ -622,9 +657,9 @@ namespace ElegantRecorder
 
         private void DeleteRecording()
         {
-            if (CurrentRecordingName.Length > 0 && ElegantOptions.ExpandedUI)
+            if (CurrentRecordingName.Length > 0 && Options.ExpandedUI)
             {
-                var diag = MessageBox.Show("Delete recording " + CurrentRecordingName + " ?", "ElegantRecorder - Confirm Delete", MessageBoxButtons.OKCancel);
+                var diag = ElegantMessage.Show("Delete recording " + CurrentRecordingName + " ?", "Elegant Message - Confirm Delete");
 
                 if (diag == DialogResult.OK)
                 {
@@ -650,10 +685,10 @@ namespace ElegantRecorder
 
         private void ElegantRecorder_Resize(object sender, EventArgs e)
         {
-            if (ElegantOptions.ExpandedUI)
+            if (Options.ExpandedUI)
             {
-                ElegantOptions.FormHeight = Height;
-                ElegantOptions.DataGridHeight = dataGridViewRecordings.Height;
+                Options.FormHeight = Height;
+                Options.DataGridHeight = dataGridViewRecordings.Height;
             }
         }
 
@@ -685,15 +720,18 @@ namespace ElegantRecorder
 
         private void renameToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Options options = new Options(this);
-            options.ShowDialog();
+            ElegantOptions options = new ElegantOptions(this);
             options.RenameFocus();
+            options.ShowDialog();
         }
 
         private void buttonTriggers_Click(object sender, EventArgs e)
         {
-            var triggerEditor = new TriggerEditor(this);
-            triggerEditor.ShowDialog();
+            if (Recording || Replaying)
+                return;
+
+            var elegantTriggers = new ElegantTriggers(this);
+            elegantTriggers.ShowDialog();
         }
     }
 }

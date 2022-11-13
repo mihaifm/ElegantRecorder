@@ -6,9 +6,11 @@ namespace ElegantRecorder
     {
         public string Password { get; set; }
 
-        public EncryptionPassword(bool set)
+        public EncryptionPassword(bool set, bool topmost)
         {
             InitializeComponent();
+
+            TopMost = topmost;
 
             if (set)
                 labelPrompt.Text = "Set encryption password:";

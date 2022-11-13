@@ -4,18 +4,20 @@ using System.Windows.Forms;
 
 namespace ElegantRecorder
 {
-    public partial class TriggerEditor : Form
+    public partial class ElegantTriggers : Form
     {
         private readonly ElegantRecorder App;
         private Recording Rec;
 
         private int hotkeyData = 0;
 
-        public TriggerEditor(ElegantRecorder elegantRecorder)
+        public ElegantTriggers(ElegantRecorder elegantRecorder)
         {
             InitializeComponent();
 
             App = elegantRecorder;
+            TopMost = App.TopMost;
+
             Rec = new Recording(App, App.CurrentRecordingName);
             Rec.Load();
 

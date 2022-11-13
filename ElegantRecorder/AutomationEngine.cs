@@ -24,7 +24,7 @@ namespace ElegantRecorder
 
             RECT boundingRect = new RECT();
 
-            if (App.ElegantOptions.MouseMoveRelative)
+            if (App.Options.MouseMoveRelative)
             {
                 if (activeWinHwnd != IntPtr.Zero)
                     boundingRect = App.WinAPI.GetBoundingRect(activeWinHwnd);
@@ -81,27 +81,27 @@ namespace ElegantRecorder
             if (action.EventType == "click")
             {
                 result = ReplayClickAction(action, ref status);
-                App.PlayAction();
+                App.PlayAction(result);
             }
             else if (action.EventType == "mousemove")
             {
                 result = ReplayMouseMoveAction(action, ref status);
-                App.PlayAction();
+                App.PlayAction(result);
             }
             else if (action.EventType == "mousewheel")
             {
                 result = ReplayMouseWheelAction(action, ref status);
-                App.PlayAction();
+                App.PlayAction(result);
             }
             else if (action.EventType == "keypress")
             {
                 result = ReplayKeypressAction(action, ref status);
-                App.PlayAction();
+                App.PlayAction(result);
             }
             else if (action.EventType == "clipboard")
             {
                 result = ReplayClipboardAction(action, ref status);
-                App.PlayAction();
+                App.PlayAction(result);
             }
             else if (action.EventType == "mousepath")
             {
@@ -117,7 +117,7 @@ namespace ElegantRecorder
 
             RECT boundingRect = new RECT();
 
-            if (App.ElegantOptions.MouseMoveRelative && activeWinHwnd != IntPtr.Zero)
+            if (App.Options.MouseMoveRelative && activeWinHwnd != IntPtr.Zero)
             {
                 boundingRect = App.WinAPI.GetBoundingRect(activeWinHwnd);
             }
@@ -151,13 +151,19 @@ namespace ElegantRecorder
         {
             mousePathTimer.Stop();
 
+            if (App.ReplayInterrupted)
+            {
+                App.PlayAction(true);
+                return;
+            }
+
             currentMousePathStep++;
 
             if (currentMousePathStep <= mousePathAction.MoveData.Length - 1)
             {
                 if (mousePathAction.MoveData[currentMousePathStep].T > 0)
                 {
-                    mousePathTimer.Interval = ElegantOptions.GetPlaybackSpeed(App.ElegantOptions.PlaybackSpeed, mousePathAction.MoveData[currentMousePathStep].T);
+                    mousePathTimer.Interval = Options.GetPlaybackSpeed(App.Options.PlaybackSpeed, mousePathAction.MoveData[currentMousePathStep].T);
                     mousePathTimer.Start();
                 }
                 else
@@ -167,13 +173,13 @@ namespace ElegantRecorder
             }
             else
             {
-                App.PlayAction();
+                App.PlayAction(true);
             }
         }
 
         private void MousePathTimer_Tick(object? sender, EventArgs e)
         {
-            if (App.ElegantOptions.MouseMoveRelative)
+            if (App.Options.MouseMoveRelative)
             {
                 if (currentMousePathStep == 0)
                 {

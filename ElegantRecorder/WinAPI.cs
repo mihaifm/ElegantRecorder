@@ -364,7 +364,7 @@ namespace ElegantRecorder
 
             if (hWnd != IntPtr.Zero)
             {
-                WindowDebug(hWnd);
+                //WindowDebug(hWnd);
 
                 return GetAncestor(hWnd, GetAncestorFlags.GetRoot);
             }
@@ -408,8 +408,6 @@ namespace ElegantRecorder
 
             var findOnwerwinex = FindWindowEx(owner, IntPtr.Zero, className, ancestorParentName);
             var findOnwerwinexName = GetWindowName(findOnwerwinex);
-
-            int stop = 0;
         }
 
         public IntPtr GetActiveWin()
@@ -501,15 +499,15 @@ namespace ElegantRecorder
 
         public void RegisterGlobalHotkeys()
         {
-            if (App.ElegantOptions.RecordHotkey != 0)
+            if (App.Options.RecordHotkey != 0)
             {
-                GetModifiers((Keys) App.ElegantOptions.RecordHotkey, out var key, out var modifiers);
+                GetModifiers((Keys) App.Options.RecordHotkey, out var key, out var modifiers);
                 RegisterHotKey(App.Handle, recordHotkeyId, modifiers, key);
             }
 
-            if (App.ElegantOptions.StopHotkey != 0)
+            if (App.Options.StopHotkey != 0)
             {
-                GetModifiers((Keys)App.ElegantOptions.StopHotkey, out var key, out var modifiers);
+                GetModifiers((Keys)App.Options.StopHotkey, out var key, out var modifiers);
                 RegisterHotKey(App.Handle, stopHotkeyId, modifiers, key);
             }
         }

@@ -1,6 +1,6 @@
 ﻿namespace ElegantRecorder
 {
-    partial class TriggerEditor
+    partial class ElegantTriggers
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TriggerEditor));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ElegantTriggers));
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.checkBoxHotkey = new System.Windows.Forms.CheckBox();
             this.buttonClearHotkey = new System.Windows.Forms.Button();

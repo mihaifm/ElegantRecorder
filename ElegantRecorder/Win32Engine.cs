@@ -30,9 +30,9 @@ namespace ElegantRecorder
             string topLevelWindowName = App.WinAPI.GetWindowName(topLevelWindow);
             string windowClassName = App.WinAPI.GetWindowClassName(topLevelWindow);
 
-            if (App.ElegantOptions.RestrictToExe)
+            if (App.Options.RestrictToExe)
             {
-                if (Path.GetFileNameWithoutExtension(App.ElegantOptions.ExePath).ToLower() != processName.ToLower())
+                if (Path.GetFileNameWithoutExtension(App.Options.ExePath).ToLower() != processName.ToLower())
                     return false;
             }
             else
@@ -60,14 +60,20 @@ namespace ElegantRecorder
         {
             IntPtr topLevelWindow = WinAPI.FindWindow(action.WindowClass, action.TopLevelWindow);
 
+            if (topLevelWindow == IntPtr.Zero)
+            {
+                status = "Failed to find window: " + action.TopLevelWindow;
+                return false;
+            }
+
             int pid = App.WinAPI.GetWindowPID(topLevelWindow);
 
             var process = Process.GetProcessById(pid);
             string processName = process.ProcessName;
 
-            if (App.ElegantOptions.RestrictToExe)
+            if (App.Options.RestrictToExe)
             {
-                if (Path.GetFileNameWithoutExtension(App.ElegantOptions.ExePath).ToLower() != processName.ToLower())
+                if (Path.GetFileNameWithoutExtension(App.Options.ExePath).ToLower() != processName.ToLower())
                 {
                     status = "Failed to find window: " + action.TopLevelWindow;
                     return false;

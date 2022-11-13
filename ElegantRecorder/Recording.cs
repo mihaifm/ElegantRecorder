@@ -49,7 +49,7 @@ namespace ElegantRecorder
             if (Name.Length == 0)
                 throw new Exception();
 
-            FilePath = Path.Combine(App.ElegantOptions.DataFolder, Name + ".json");
+            FilePath = Path.Combine(App.Options.DataFolder, Name + ".json");
 
             Triggers = new Triggers();
         }
@@ -58,22 +58,22 @@ namespace ElegantRecorder
         {
             if (direction)
             {
-                App.ElegantOptions.PlaybackSpeed = PlaybackSpeed;
-                App.ElegantOptions.Encrypted = Encrypted;
-                App.ElegantOptions.RestrictToExe = RestrictToExe;
-                App.ElegantOptions.ExePath = ExePath;
-                App.ElegantOptions.CurrRecName = Name;
+                App.Options.PlaybackSpeed = PlaybackSpeed;
+                App.Options.Encrypted = Encrypted;
+                App.Options.RestrictToExe = RestrictToExe;
+                App.Options.ExePath = ExePath;
+                App.Options.CurrRecName = Name;
             }
             else
             {
-                PlaybackSpeed = App.ElegantOptions.PlaybackSpeed;
-                Encrypted = App.ElegantOptions.Encrypted;
-                RestrictToExe = App.ElegantOptions.RestrictToExe;
-                ExePath = App.ElegantOptions.ExePath;
-                Name = App.ElegantOptions.CurrRecName;
+                PlaybackSpeed = App.Options.PlaybackSpeed;
+                Encrypted = App.Options.Encrypted;
+                RestrictToExe = App.Options.RestrictToExe;
+                ExePath = App.Options.ExePath;
+                Name = App.Options.CurrRecName;
 
                 if (Name.Length > 0)
-                    FilePath = Path.Combine(App.ElegantOptions.DataFolder, Name + ".json");
+                    FilePath = Path.Combine(App.Options.DataFolder, Name + ".json");
                 else
                     FilePath = "";
             }
@@ -114,18 +114,37 @@ namespace ElegantRecorder
             }
         }
 
+        public void Encrypt()
+        {
+            JsonSerializerOptions jsonOptions = new()
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+
+            try
+            {
+                var plainData = JsonSerializer.Serialize(UIActions, jsonOptions);
+                EncryptedActions = StringCipher.Encrypt(plainData, Password);
+                UIActions = new UIAction[0];
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
         public void Decrypt()
         {
+            JsonSerializerOptions jsonOptions = new()
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+
             try
             {
                 var plainData = StringCipher.Decrypt(EncryptedActions, Password);
-
-                JsonSerializerOptions jsonOptions = new()
-                {
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                };
-
                 UIActions = JsonSerializer.Deserialize<UIAction[]>(plainData, jsonOptions);
+                EncryptedActions = "";
             }
             catch
             {
@@ -146,9 +165,6 @@ namespace ElegantRecorder
 
             SyncAppOptions(false);
 
-            //if (FilePath.Length == 0)
-            //    return;
-
             try
             {
                 JsonSerializerOptions jsonOptions = new()
@@ -160,11 +176,8 @@ namespace ElegantRecorder
 
                 if (encrypt && Encrypted)
                 {
-                    var plainData = JsonSerializer.Serialize(UIActions, jsonOptions);
-                    EncryptedActions = StringCipher.Encrypt(plainData, Password);
-                    UIActions = new UIAction[0];
+                    Encrypt();
 
-                    //stream.Write("\"EncryptedActions\":" + "\"" + encData + "\"");
                     stream.Write(JsonSerializer.Serialize(this));
                 }
                 else
@@ -214,12 +227,12 @@ namespace ElegantRecorder
         {
             try
             {
-                if (Name != App.ElegantOptions.CurrRecName &&
+                if (Name != App.Options.CurrRecName &&
                     Name != null && Name.Length > 0 &&
-                    App.ElegantOptions.CurrRecName != null && App.ElegantOptions.CurrRecName.Length > 0)
+                    App.Options.CurrRecName != null && App.Options.CurrRecName.Length > 0)
                 {
-                    var path1 = Path.Combine(App.ElegantOptions.DataFolder, Name + ".json");
-                    var path2 = Path.Combine(App.ElegantOptions.DataFolder, App.ElegantOptions.CurrRecName + ".json");
+                    var path1 = Path.Combine(App.Options.DataFolder, Name + ".json");
+                    var path2 = Path.Combine(App.Options.DataFolder, App.Options.CurrRecName + ".json");
 
                     File.Move(path1, path2);
                 }

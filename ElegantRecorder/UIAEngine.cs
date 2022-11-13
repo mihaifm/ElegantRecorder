@@ -254,9 +254,9 @@ namespace ElegantRecorder
 
                 status = elementName + " : " + automationId + " [" + processName + "]";
 
-                if (App.ElegantOptions.RestrictToExe)
+                if (App.Options.RestrictToExe)
                 {
-                    if (Path.GetFileNameWithoutExtension(App.ElegantOptions.ExePath).ToLower() != processName.ToLower())
+                    if (Path.GetFileNameWithoutExtension(App.Options.ExePath).ToLower() != processName.ToLower())
                         return false;
                 }
                 else
@@ -293,7 +293,7 @@ namespace ElegantRecorder
 
         public override bool ReplayClickAction(UIAction action, ref string status)
         {
-            AutomationElement topLevelWindow = FindWindowByName(action.TopLevelWindow, action.WindowClass, App.ElegantOptions.RestrictToExe, App.ElegantOptions.ExePath);
+            AutomationElement topLevelWindow = FindWindowByName(action.TopLevelWindow, action.WindowClass, App.Options.RestrictToExe, App.Options.ExePath);
 
             if (topLevelWindow == null)
             {
