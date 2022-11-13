@@ -25,5 +25,12 @@ namespace ElegantRecorder
                 Close();
             }
         }
+
+        private void buttonOk_Click(object sender, System.EventArgs e)
+        {
+            DialogResult = DialogResult.OK;
+            Password = textBoxPassword.Text;
+            Close();
+        }
     }
 }

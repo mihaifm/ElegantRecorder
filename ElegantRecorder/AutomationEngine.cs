@@ -132,12 +132,13 @@ namespace ElegantRecorder
         Timer mousePathTimer = null;
         int currentMousePathStep = -1;
         UIAction mousePathAction = null;
-        RECT activeWinRect = new RECT();
+        RECT activeWinRect;
 
         public virtual bool ReplayMousePathAction(UIAction action, ref string status)
         {
             mousePathAction = action;
             currentMousePathStep = -1;
+            activeWinRect = new RECT();
 
             mousePathTimer = new Timer();
             mousePathTimer.Tick += MousePathTimer_Tick;

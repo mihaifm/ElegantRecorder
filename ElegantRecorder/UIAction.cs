@@ -31,6 +31,9 @@ namespace ElegantRecorder
         [JsonPropertyName("win")]
         public string TopLevelWindow { get; set; }
 
+        [JsonPropertyName("wincls")]
+        public string? WindowClass { get; set; }
+
         [JsonPropertyName("x")]
         public int? OffsetX { get; set; }
 

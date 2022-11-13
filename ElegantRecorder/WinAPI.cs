@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
@@ -55,6 +56,28 @@ namespace ElegantRecorder
         Control = 2,
         Shift = 4,
         Windows = 8
+    }
+
+    public enum GetWindowType : uint
+    {
+        GW_HWNDFIRST = 0,
+        GW_HWNDLAST = 1,
+        GW_HWNDNEXT = 2,
+        GW_HWNDPREV = 3,
+        GW_OWNER = 4,
+        GW_CHILD = 5,
+        GW_ENABLEDPOPUP = 6
+    }
+
+    public enum GWL
+    {
+        GWL_WNDPROC = (-4),
+        GWL_HINSTANCE = (-6),
+        GWL_HWNDPARENT = (-8),
+        GWL_STYLE = (-16),
+        GWL_EXSTYLE = (-20),
+        GWL_USERDATA = (-21),
+        GWL_ID = (-12)
     }
 
     public class WinAPI
@@ -164,6 +187,24 @@ namespace ElegantRecorder
 
         [DllImport("user32.dll")]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr FindWindowEx(IntPtr parentHandle, IntPtr hWndChildAfter, string className, string windowTitle);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr GetWindow(IntPtr hWnd, GetWindowType uCmd);
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowLong")]
+        static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll", ExactSpelling = true, CharSet = CharSet.Auto)]
+        public static extern IntPtr GetParent(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+
+
 
         private delegate IntPtr LowLevelHookProc(int nCode, IntPtr wParam, IntPtr lParam);
         private LowLevelHookProc mouseDelegate = null;
@@ -323,16 +364,64 @@ namespace ElegantRecorder
 
             if (hWnd != IntPtr.Zero)
             {
+                WindowDebug(hWnd);
+
                 return GetAncestor(hWnd, GetAncestorFlags.GetRoot);
             }
 
             return IntPtr.Zero;
         }
 
+        public string GetWindowClassName(IntPtr hwnd)
+        {
+            StringBuilder ClassName = new StringBuilder(256);
+            GetClassName(hwnd, ClassName, ClassName.Capacity);
+            return ClassName.ToString();
+        }
+
+        private void WindowDebug(IntPtr hwnd)
+        {
+            var tempName = GetWindowName(hwnd);
+
+            var parent = GetParent(hwnd);
+            var parentName = GetWindowName(parent);
+
+            var ancestorParent = GetAncestor(hwnd, GetAncestorFlags.GetRoot);
+            var ancestorParentName = GetWindowName(ancestorParent);
+
+            var ancestor = GetAncestor(hwnd, GetAncestorFlags.GetRootOwner);
+            var ancestorName = GetWindowName(ancestor);
+
+            var owner = GetWindow(hwnd, GetWindowType.GW_OWNER);
+            var onwerName = GetWindowName(owner);
+
+            IntPtr styles = GetWindowLongPtr(hwnd, (int)GWL.GWL_STYLE);
+            bool isPopup = (styles.ToInt64() & 0x80000000L) == 0x80000000L;
+
+            var className = GetWindowClassName(hwnd);
+
+            var findwin = FindWindow(null, ancestorParentName);
+            var findwinWithCls = FindWindow(className, ancestorParentName);
+
+            var findwinex = FindWindowEx(ancestor, IntPtr.Zero, className, ancestorParentName);
+            var findwinexName = GetWindowName(findwinex);
+
+            var findOnwerwinex = FindWindowEx(owner, IntPtr.Zero, className, ancestorParentName);
+            var findOnwerwinexName = GetWindowName(findOnwerwinex);
+
+            int stop = 0;
+        }
+
         public IntPtr GetActiveWin()
         {
-            return GetForegroundWindow();
-            //return WinAPI.GetActiveWindow();
+            IntPtr hwnd = GetForegroundWindow();
+
+            if (hwnd != IntPtr.Zero)
+            {
+                return GetAncestor(hwnd, GetAncestorFlags.GetRootOwner);
+            }
+
+            return IntPtr.Zero;
         }
 
         public string GetWindowName(IntPtr hwnd)

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Windows;
 
 namespace ElegantRecorder
 {
@@ -16,7 +15,7 @@ namespace ElegantRecorder
             var point = new System.Drawing.Point(currentMouseHookStruct.pt.x, currentMouseHookStruct.pt.y);
 
             IntPtr topLevelWindow = App.WinAPI.GetTopLevelWindow(point);
-
+            
             if (topLevelWindow == IntPtr.Zero)
             {
                 status = "TopLevelWindow not found";
@@ -29,21 +28,7 @@ namespace ElegantRecorder
             string processName = process.ProcessName;
 
             string topLevelWindowName = App.WinAPI.GetWindowName(topLevelWindow);
-
-            /*
-            if (topLevelWindowName.Length == 0)
-            {
-                if (lastNamedWindow != IntPtr.Zero)
-                {
-                    topLevelWindow = lastNamedWindow;
-                    topLevelWindowName = App.WinAPI.GetWindowName(topLevelWindow);
-                }
-            }
-            else
-            {
-                lastNamedWindow = topLevelWindow;
-            }
-            */
+            string windowClassName = App.WinAPI.GetWindowClassName(topLevelWindow);
 
             if (App.ElegantOptions.RestrictToExe)
             {
@@ -58,15 +43,11 @@ namespace ElegantRecorder
             }
 
             RECT boundingRect;
-
-            if (topLevelWindowName.Length != 0)
-                boundingRect = App.WinAPI.GetBoundingRect(topLevelWindow);
-            else
-                boundingRect = new RECT();
-
+            boundingRect = App.WinAPI.GetBoundingRect(topLevelWindow);
 
             uiAction.EventType = "click";
             uiAction.TopLevelWindow = topLevelWindowName;
+            uiAction.WindowClass = windowClassName;
             uiAction.OffsetX = point.X - boundingRect.Left;
             uiAction.OffsetY = point.Y - boundingRect.Top;
             uiAction.ExtraInfo = (long)currentMouseHookStruct.dwExtraInfo;
@@ -77,7 +58,7 @@ namespace ElegantRecorder
 
         public override bool ReplayClickAction(UIAction action, ref string status)
         {
-            IntPtr topLevelWindow = WinAPI.FindWindow(null, action.TopLevelWindow);
+            IntPtr topLevelWindow = WinAPI.FindWindow(action.WindowClass, action.TopLevelWindow);
 
             int pid = App.WinAPI.GetWindowPID(topLevelWindow);
 

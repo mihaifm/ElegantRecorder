@@ -59,7 +59,7 @@ namespace ElegantRecorder
             return node;
         }
 
-        public static AutomationElement FindWindowByName(string name, bool restrictToExe, string exePath)
+        public static AutomationElement FindWindowByName(string name, string className, bool restrictToExe, string exePath)
         {
             TreeWalker walker = TreeWalker.ControlViewWalker;
 
@@ -69,7 +69,7 @@ namespace ElegantRecorder
 
             while (window != null)
             {
-                if (window.Current.Name == name)
+                if (window.Current.Name == name && window.Current.ClassName == className)
                 {
                     if (!restrictToExe)
                         return window;
@@ -273,6 +273,7 @@ namespace ElegantRecorder
                 uiAction.AutomationId = automationId;
                 uiAction.ControlType = elementTypeId;
                 uiAction.TopLevelWindow = topLevelWindow.Current.Name;
+                uiAction.WindowClass = topLevelWindow.Current.ClassName;
                 uiAction.OffsetX = (int)(point.X - boundingRect.X);
                 uiAction.OffsetY = (int)(point.Y - boundingRect.Y);
                 uiAction.Level = level;
@@ -292,7 +293,7 @@ namespace ElegantRecorder
 
         public override bool ReplayClickAction(UIAction action, ref string status)
         {
-            AutomationElement topLevelWindow = FindWindowByName(action.TopLevelWindow, App.ElegantOptions.RestrictToExe, App.ElegantOptions.ExePath);
+            AutomationElement topLevelWindow = FindWindowByName(action.TopLevelWindow, action.WindowClass, App.ElegantOptions.RestrictToExe, App.ElegantOptions.ExePath);
 
             if (topLevelWindow == null)
             {
