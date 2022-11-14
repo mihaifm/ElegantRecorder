@@ -22,7 +22,7 @@ namespace ElegantRecorder
             Rec.Load();
 
             checkBoxHotkey.Checked = Rec.Triggers.HotkeyEnabled;
-            textBoxHotkey.Text = string.Join("+", ((Keys)Rec.Triggers.Hotkey).ToString().Split(", ").Reverse());
+            textBoxHotkey.Text = Util.HotkeyToString(Rec.Triggers.Hotkey);
             hotkeyData = Rec.Triggers.Hotkey;
             checkBoxTime.Checked = Rec.Triggers.TimeEnabled;
             dateTimePickerDate.Value = Rec.Triggers.Date;
@@ -76,6 +76,7 @@ namespace ElegantRecorder
         private void buttonOk_Click(object sender, EventArgs e)
         {
             SaveTriggers();
+            App.RefreshCurrentRow(Rec);
             Close();
         }
 
@@ -125,7 +126,7 @@ namespace ElegantRecorder
             if (e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.ControlKey || e.KeyCode == Keys.Menu)
                 return;
 
-            textBoxHotkey.Text = string.Join("+", e.KeyData.ToString().Split(", ").Reverse());
+            textBoxHotkey.Text = Util.HotkeyToString((int) e.KeyData);
             hotkeyData = (int)e.KeyData;
 
             e.SuppressKeyPress = true;

@@ -126,7 +126,7 @@ namespace ElegantRecorder
                     stream.Position = 0;
 
                     var tag = "\"UIActions\":";
-                    string header = global::ElegantRecorder.Recording.ReadUntil(stream, "\"UIActions\":");
+                    string header = Util.ReadUntil(stream, "\"UIActions\":");
                     header += tag + "[]}";
 
                     string recName = Path.GetFileNameWithoutExtension(file);
@@ -269,6 +269,16 @@ namespace ElegantRecorder
             textBoxNewRec.Enabled = !disabled;
         }
 
+        public void RefreshCurrentRow(Recording rec)
+        {
+            if (rec.Triggers.Hotkey != 0)
+                dataGridViewRecordings.SelectedRows[0].Cells[1].Value = Util.HotkeyToString(rec.Triggers.Hotkey);
+            else
+                dataGridViewRecordings.SelectedRows[0].Cells[1].Value = "";
+
+            dataGridViewRecordings.SelectedRows[0].Cells[2].Value = rec.Encrypted ? Resources.lock_edit : Resources.empty;
+        }
+
         private void buttonRecord_Click(object sender, EventArgs e)
         {
             Record();
@@ -391,7 +401,7 @@ namespace ElegantRecorder
 
         public void Replay(string recording)
         {
-            if (Replaying)
+            if (Recording || Replaying)
                 return;
 
             ResetButtons();
