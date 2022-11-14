@@ -46,7 +46,8 @@ namespace ElegantRecorder
 
             if (now >= lastModified && (now - lastModified).TotalMilliseconds <= 500)
             {
-                App.Replay(rec.Name);
+                App.SelectRecording(rec.Name);
+                App.StateSwitch(State.Replay);
             }
         }
 
@@ -69,7 +70,8 @@ namespace ElegantRecorder
             {
                 if (RecWindowStatus[rec.Name] == false)
                 {
-                    App.Replay(rec.Name);
+                    App.SelectRecording(rec.Name);
+                    App.StateSwitch(State.Replay);
                     RecWindowStatus[rec.Name] = true;
                 }
             }
@@ -98,7 +100,8 @@ namespace ElegantRecorder
         private void TimeTimer_Tick(object? sender, EventArgs e)
         {
             var rec = App.RecHeaders[(sender as Timer).Tag as string];
-            App.Replay(rec.Name);
+            App.SelectRecording(rec.Name);
+            App.StateSwitch(State.Replay);
             (sender as Timer).Stop();
             RecTimeTimers.Remove(rec.Name);
         }
@@ -109,7 +112,8 @@ namespace ElegantRecorder
             {
                 if (recrec.Value.Trim() == RecFinishedName)
                 {
-                    App.Replay(recrec.Key);
+                    App.SelectRecording(recrec.Key);
+                    App.StateSwitch(State.Replay);
                 }
             }
         }

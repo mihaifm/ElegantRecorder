@@ -9,6 +9,17 @@ using ElegantRecorder.Properties;
 
 namespace ElegantRecorder
 {
+    public enum State
+    {
+        Default,
+        Record,
+        Pause,
+        RecordPause,
+        ReplayPause,
+        Stop,
+        Replay
+    }
+
     public partial class ElegantRecorder : Form
     {
         public string ConfigFileName;
@@ -24,10 +35,6 @@ namespace ElegantRecorder
 
         public string CurrentRecordingName = "";
 
-        public bool Recording = false;
-        public bool Replaying = false;
-        public bool ReplayInterrupted = false;
-
         private string status;
         private Stopwatch stopwatch = new Stopwatch();
 
@@ -35,9 +42,13 @@ namespace ElegantRecorder
         private Timer replayTimer = null;
         private Recording ReplayRec = null;
 
+        public State PlayerState { get; private set; }
+
         public ElegantRecorder()
         {
             InitializeComponent();
+
+            PlayerState = State.Default;
 
             WinAPI = new WinAPI(this);
             TriggerData = new TriggerData(this);
@@ -153,6 +164,104 @@ namespace ElegantRecorder
             dataGridViewRecordings.Rows[0].Selected = true;
         }
 
+        public State StateSwitch(State transition)
+        {
+            switch(PlayerState)
+            {
+                case State.Default:
+                    if (transition == State.Record)
+                    {
+                        PlayerState = transition;
+                        Record(false);
+                    }
+                    else if (transition == State.Replay)
+                    {
+                        PlayerState = transition;
+                        Replay();
+                    }
+                    break;
+
+                case State.Record:
+                    if (transition == State.Default)
+                    {
+                        PlayerState = transition;
+                    }
+                    if (transition == State.Pause)
+                    {
+                        return StateSwitch(State.RecordPause);
+                    }
+                    else if (transition == State.RecordPause)
+                    {
+                        PlayerState = transition;
+                        StopRecording(true);
+                    }
+                    else if (transition == State.Stop)
+                    {
+                        PlayerState = transition;
+                        StopRecording(false);
+                    }
+                    break;
+
+                case State.Pause:
+                    PlayerState = State.Default;
+                    break;
+
+                case State.RecordPause:
+                    if (transition == State.Record)
+                    {
+                        PlayerState = transition;
+                        Record(true);
+                    }
+                    else if (transition == State.Stop)
+                    {
+                        PlayerState = transition;
+                        StopRecording(false);
+                    }
+                    break;
+
+                case State.ReplayPause:
+                    if (transition == State.Stop)
+                    {
+                        PlayerState = transition;
+                        StopReplay(false);
+                    }
+                    else if (transition == State.Replay)
+                    {
+                        PlayerState = transition;
+                        Replay();
+                    }
+                    break;
+
+                case State.Stop:
+                    PlayerState = State.Default;
+                    return StateSwitch(transition);
+
+                case State.Replay:
+                    if (transition == State.Pause)
+                    {
+                        return StateSwitch(State.ReplayPause);
+                    }
+                    else if (transition == State.ReplayPause)
+                    {
+                        PlayerState = transition;
+                        StopReplay(true);
+                    }
+                    else if (transition == State.Stop)
+                    {
+                        PlayerState = transition;
+                        StopReplay(false);
+                    }
+                    else if (transition == State.Default)
+                    {
+                        PlayerState = transition;
+                    }
+                    break;
+            }
+
+            SetButtons();
+            return PlayerState;
+        }
+
         public void RecordMouseMove(MouseHookStruct currentMouseHookStruct)
         {
             if (!Options.RecordMouseMove)
@@ -252,14 +361,20 @@ namespace ElegantRecorder
             }
         }
 
-        private void ResetButtons()
+        private void SetButtons()
         {
-            Recording = false;
-            Replaying = false;
-            buttonRecord.Image = Resources.record_fill;
-            buttonReplay.Image = Resources.play_fill;
-            buttonPause.Image = Resources.pause_fill;
-            LockUI(false);
+            buttonRecord.Image = PlayerState == State.Record ? Resources.record_edit : Resources.record_fill;
+            buttonReplay.Image = PlayerState == State.Replay ? Resources.play_edit : Resources.play_fill;
+
+            if (PlayerState == State.RecordPause || PlayerState == State.ReplayPause)
+                buttonPause.Image = Resources.pause_edit;
+            else
+                buttonPause.Image = Resources.pause_fill;
+
+            if (PlayerState == State.Default || PlayerState == State.Stop)
+                LockUI(false);
+            else
+                LockUI(true);
         }
 
         private void LockUI(bool disabled)
@@ -279,28 +394,14 @@ namespace ElegantRecorder
             dataGridViewRecordings.SelectedRows[0].Cells[2].Value = rec.Encrypted ? Resources.lock_edit : Resources.empty;
         }
 
-        private void buttonRecord_Click(object sender, EventArgs e)
+        private void Record(bool paused)
         {
-            Record();
-        }
-
-        public void Record()
-        {
-            if (Recording || Replaying)
-                return;
-
-            ResetButtons();
             ClearStatus();
-
-            buttonRecord.Image = Resources.record_edit;
-            Recording = true;
-
-            LockUI(true);
 
             if (CurrentRecordingName.Length == 0)
             {
                 SetStatus("Add a new recording first");
-                ResetButtons();
+                StateSwitch(State.Default);
                 return;
             }
 
@@ -310,17 +411,18 @@ namespace ElegantRecorder
             if (rec.RestrictToExe == true && rec.ExePath.Length == 0)
             {
                 SetStatus("Specify target executable");
-                ResetButtons();
+                StateSwitch(State.Default);
                 return;
             }
 
-            if (Options.PromptOverwrite && (rec.UIActions.Length > 0 || rec.EncryptedActions.Length > 0))
+            if (Options.PromptOverwrite && !paused &&
+                (rec.UIActions.Length > 0 || rec.EncryptedActions.Length > 0))
             {
                 var diag = ElegantMessage.Show("Overwrite recording " + CurrentRecordingName + " ?");
 
                 if (diag != DialogResult.OK)
                 {
-                    ResetButtons();
+                    StateSwitch(State.Default);
                     return;
                 }
             }
@@ -335,57 +437,50 @@ namespace ElegantRecorder
             WinAPI.InstallHooks();
         }
 
-        // Use MouseDown istead of Click event to avoid situations where other UI events happen between mouse down and up, due to the automation
-        private void buttonStop_MouseDown(object sender, MouseEventArgs e)
+        private void StopReplay(bool paused)
         {
-            Stop(false);
+            if (!paused)
+                currentActionIndex = -1;
         }
 
-        public void Stop(bool paused)
+        private void StopRecording(bool paused)
         {
             WinAPI.UninstallHooks();
-
-            ReplayInterrupted = true;
 
             stopwatch.Reset();
 
             ClearStatus();
 
-            if (Recording)
+            AutomationEngine.CompressMoveData();
+            AutomationEngine.CleanResidualKeys();
+
+            var rec = new Recording(this, CurrentRecordingName);
+            rec.Load();
+
+            if (rec.Encrypted)
             {
-                AutomationEngine.CompressMoveData();
-                AutomationEngine.CleanResidualKeys();
+                var encPwd = new EncryptionPassword(true, TopMost);
+                encPwd.ShowDialog();
 
-                var rec = new Recording(this, CurrentRecordingName);
-                rec.Load();
-
-                if (rec.Encrypted)
+                if (encPwd.DialogResult == DialogResult.OK)
                 {
-                    var encPwd = new EncryptionPassword(true, TopMost);
-                    encPwd.ShowDialog();
-
-                    if (encPwd.DialogResult == DialogResult.OK)
-                    {
-                        rec.Password = encPwd.Password;
-                        rec.UIActions = UISteps.ToArray();
-                        rec.Save(true);
-                    }
-                }
-                else
-                {
-                    try
-                    {
-                        rec.UIActions = UISteps.ToArray();
-                        rec.Save(false);
-                    }
-                    catch (Exception)
-                    {
-                        SetStatus("Invalid recording file, recording not saved!");
-                    }
+                    rec.Password = encPwd.Password;
+                    rec.UIActions = UISteps.ToArray();
+                    rec.Save(true);
                 }
             }
-
-            ResetButtons();
+            else
+            {
+                try
+                {
+                    rec.UIActions = UISteps.ToArray();
+                    rec.Save(false);
+                }
+                catch (Exception)
+                {
+                    SetStatus("Invalid recording file, recording not saved!");
+                }
+            }
 
             if (paused == false)
             {
@@ -394,38 +489,9 @@ namespace ElegantRecorder
             }
         }
 
-        private void buttonReplay_Click(object sender, EventArgs e)
+        private void Replay()
         {
-            Replay(CurrentRecordingName);
-        }
-
-        public void Replay(string recording)
-        {
-            if (Recording || Replaying)
-                return;
-
-            ResetButtons();
             ClearStatus();
-            buttonReplay.Image = Resources.play_edit;
-
-            Replaying = true;
-            ReplayInterrupted = false;
-
-            LockUI(true);
-
-            if (recording != CurrentRecordingName)
-            {
-                foreach(DataGridViewRow row in dataGridViewRecordings.Rows)
-                {
-                    if (row.Cells[0].Value.ToString() == recording)
-                    {
-                        dataGridViewRecordings.ClearSelection();
-                        row.Selected = true;
-                        CurrentRecordingName = recording;
-                        break;
-                    }
-                }
-            }
 
             ReplayRec = new Recording(this, CurrentRecordingName);
             ReplayRec.Load();
@@ -446,7 +512,7 @@ namespace ElegantRecorder
                     catch 
                     {
                         SetStatus("Failed to decrypt");
-                        ResetButtons();
+                        StateSwitch(State.Stop);
                         return;
                     }
                 }
@@ -464,9 +530,16 @@ namespace ElegantRecorder
         {
             replayTimer.Stop();
 
-            if (ReplayInterrupted)
+            if (PlayerState == State.Stop)
             {
                 SetStatus("Replay interrupted");
+                StateSwitch(State.Default);
+                return;
+            }
+
+            if (PlayerState == State.ReplayPause)
+            {
+                SetStatus("Replay paused");
                 return;
             }
 
@@ -474,7 +547,7 @@ namespace ElegantRecorder
             {
                 SetStatus(status);
                 currentActionIndex = -1;
-                ResetButtons();
+                StateSwitch(State.Stop);
                 return;
             }
 
@@ -497,8 +570,28 @@ namespace ElegantRecorder
             else
             {
                 SetStatus("Replay finished");
-                ResetButtons();
+                StateSwitch(State.Default);
                 TriggerData.TriggerNewRecording(ReplayRec.Name);
+            }
+        }
+
+        public void SelectRecording(string recording)
+        {
+            if (PlayerState != State.Default)
+                return;
+
+            if (recording != CurrentRecordingName)
+            {
+                foreach (DataGridViewRow row in dataGridViewRecordings.Rows)
+                {
+                    if (row.Cells[0].Value.ToString() == recording)
+                    {
+                        dataGridViewRecordings.ClearSelection();
+                        row.Selected = true;
+                        CurrentRecordingName = recording;
+                        break;
+                    }
+                }
             }
         }
 
@@ -507,9 +600,25 @@ namespace ElegantRecorder
             AutomationEngine.ReplayAction(ReplayRec.UIActions[currentActionIndex], ref status);
         }
 
+        // Use MouseDown istead of Click event to avoid situations where other UI events happen between mouse down and up, due to the automation
+        private void buttonStop_MouseDown(object sender, MouseEventArgs e)
+        {
+            StateSwitch(State.Stop);
+        }
+
+        private void buttonRecord_Click(object sender, EventArgs e)
+        {
+            StateSwitch(State.Record);
+        }
+
+        private void buttonReplay_Click(object sender, EventArgs e)
+        {
+            StateSwitch(State.Replay);
+        }
+
         private void buttonSettings_Click(object sender, EventArgs e)
         {
-            if (Recording || Replaying)
+            if (PlayerState != State.Default)
                 return;
 
             ElegantOptions elegantOptions = new ElegantOptions(this);
@@ -525,12 +634,7 @@ namespace ElegantRecorder
 
         private void buttonPause_MouseDown(object sender, MouseEventArgs e)
         {
-            if (!Recording && !Replaying)
-                return;
-
-            Stop(true);
-
-            buttonPause.Image = Resources.pause_edit;
+            StateSwitch(State.Pause);
         }
 
         protected override void WndProc(ref Message m)
@@ -737,7 +841,7 @@ namespace ElegantRecorder
 
         private void buttonTriggers_Click(object sender, EventArgs e)
         {
-            if (Recording || Replaying)
+            if (PlayerState != State.Default)
                 return;
 
             var elegantTriggers = new ElegantTriggers(this);

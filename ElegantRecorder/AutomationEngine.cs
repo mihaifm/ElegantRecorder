@@ -151,7 +151,7 @@ namespace ElegantRecorder
         {
             mousePathTimer.Stop();
 
-            if (App.ReplayInterrupted)
+            if (App.PlayerState == State.Stop || App.PlayerState == State.ReplayPause)
             {
                 App.PlayAction(true);
                 return;

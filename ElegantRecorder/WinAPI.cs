@@ -545,16 +545,17 @@ namespace ElegantRecorder
 
                 if (id == recordHotkeyId)
                 {
-                    App.Record();
+                    App.StateSwitch(State.Record);
                 }
                 else if (id == stopHotkeyId)
                 {
-                    App.Stop(false);
+                    App.StateSwitch(State.Stop);
                 }
 
                 if (App.TriggerData.RecHotkeys.ContainsKey(id))
                 {
-                    App.Replay(App.TriggerData.RecHotkeys[id]);
+                    App.SelectRecording(App.TriggerData.RecHotkeys[id]);
+                    App.StateSwitch(State.Replay);
                 }
             }
         }
