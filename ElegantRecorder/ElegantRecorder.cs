@@ -439,6 +439,11 @@ namespace ElegantRecorder
 
         private void StopReplay(bool paused)
         {
+            replayTimer.Stop();
+
+            if (status.Length == 0)
+                SetStatus("Replay interrupted");
+
             if (!paused)
                 currentActionIndex = -1;
         }
@@ -618,7 +623,7 @@ namespace ElegantRecorder
 
         private void buttonSettings_Click(object sender, EventArgs e)
         {
-            if (PlayerState != State.Default)
+            if (PlayerState != State.Default && PlayerState != State.Stop)
                 return;
 
             ElegantOptions elegantOptions = new ElegantOptions(this);
@@ -841,7 +846,7 @@ namespace ElegantRecorder
 
         private void buttonTriggers_Click(object sender, EventArgs e)
         {
-            if (PlayerState != State.Default)
+            if (PlayerState != State.Default && PlayerState != State.Stop)
                 return;
 
             var elegantTriggers = new ElegantTriggers(this);

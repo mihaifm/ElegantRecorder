@@ -58,7 +58,7 @@ namespace ElegantRecorder
 
         public override bool ReplayClickAction(UIAction action, ref string status)
         {
-            IntPtr topLevelWindow = WinAPI.FindWindow(action.WindowClass, action.TopLevelWindow);
+            IntPtr topLevelWindow = App.WinAPI.SearchForWindow(action.WindowClass, action.TopLevelWindow);
 
             if (topLevelWindow == IntPtr.Zero)
             {

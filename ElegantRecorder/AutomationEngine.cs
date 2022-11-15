@@ -230,7 +230,10 @@ namespace ElegantRecorder
                 }
                 else
                 {
-                    break;
+                    if (App.UISteps[i].EventType == "mousepath" || App.UISteps[i].EventType == "mousemove")
+                        continue;
+                    else
+                        break;
                 }
             }
         }

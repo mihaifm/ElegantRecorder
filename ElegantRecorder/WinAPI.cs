@@ -80,6 +80,13 @@ namespace ElegantRecorder
         GWL_ID = (-12)
     }
 
+    public struct WindowSearchData
+    {
+        public string WindowClass;
+        public string Title;
+        public IntPtr Hwnd;
+    }
+
     public class WinAPI
     {
         private ElegantRecorder App;
@@ -188,6 +195,9 @@ namespace ElegantRecorder
         [DllImport("user32.dll")]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, ref WindowSearchData data);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr FindWindowEx(IntPtr parentHandle, IntPtr hWndChildAfter, string className, string windowTitle);
@@ -210,6 +220,9 @@ namespace ElegantRecorder
         private LowLevelHookProc mouseDelegate = null;
         private LowLevelHookProc keyboardDelegate = null;
 
+        private delegate bool EnumWindowsProc(IntPtr hwnd, ref WindowSearchData data);
+        private EnumWindowsProc enumWindowsProc = null;
+
         public MouseHookStruct CurrentMouseHookStruct;
         public MouseHookStruct PrevMouseHookStruct;
         public KeyboardHookStruct KeyboardHookStruct;
@@ -227,6 +240,8 @@ namespace ElegantRecorder
             keyboardHookID = SetWindowsHookEx(WH_KEYBOARD_LL, keyboardDelegate, GetModuleHandle(moduleName), 0);
 
             AddClipboardFormatListener(App.Handle);
+
+            enumWindowsProc = new EnumWindowsProc(EnumWindowsCallback);
         }
 
         public void UninstallHooks()
@@ -298,6 +313,23 @@ namespace ElegantRecorder
             }
 
             return CallNextHookEx(keyboardHookID, nCode, wParam, lParam);
+        }
+
+        public static bool EnumWindowsCallback(IntPtr hWnd, ref WindowSearchData data)
+        {
+            StringBuilder sb = new StringBuilder(1024);
+            GetClassName(hWnd, sb, sb.Capacity);
+            if (sb.ToString().Equals(data.WindowClass))
+            {
+                sb = new StringBuilder(1024);
+                GetWindowText(hWnd, sb, sb.Capacity);
+                if (sb.ToString().Equals(data.Title))
+                {
+                    data.Hwnd = hWnd;
+                    return false;
+                }
+            }
+            return true;
         }
 
         public bool MergeMouseEvents(ref int previousFlags)
@@ -377,6 +409,40 @@ namespace ElegantRecorder
             StringBuilder ClassName = new StringBuilder(256);
             GetClassName(hwnd, ClassName, ClassName.Capacity);
             return ClassName.ToString();
+        }
+
+        public IntPtr SearchForWindow(string windowclass, string title)
+        {
+            //return FindWindow(windowclass, title);
+
+            WindowSearchData sd = new WindowSearchData { WindowClass = windowclass, Title = title, Hwnd = IntPtr.Zero };
+            EnumWindows(new EnumWindowsProc(EnumWindowsCallback), ref sd);
+
+            if (sd.Hwnd != IntPtr.Zero)
+            {
+                return sd.Hwnd;
+            }
+            else 
+            {
+                //the window might be a child popup of the desktop, try the FindWindowEx method
+                bool bFound = false;
+                IntPtr prevWindow = IntPtr.Zero;
+
+                while (!bFound)
+                {
+                    IntPtr nextWindow = FindWindowEx(IntPtr.Zero, prevWindow, null, null);
+
+                    if (nextWindow == IntPtr.Zero)
+                        break;
+
+                    if (GetWindowClassName(nextWindow) == windowclass && GetWindowName(nextWindow) == title)
+                        return nextWindow;
+
+                    prevWindow = nextWindow;
+                }
+
+                return IntPtr.Zero;
+            }
         }
 
         private void WindowDebug(IntPtr hwnd)
