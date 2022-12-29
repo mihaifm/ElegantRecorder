@@ -7,7 +7,8 @@ namespace ElegantRecorder
     public partial class ElegantOptions : Form
     {
         private ElegantRecorder App;
-        private Recording Rec;
+
+        private Recording Rec = null;
 
         private int recordHotkeyData = 0;
         private int stopHotkeyData = 0;
@@ -19,8 +20,11 @@ namespace ElegantRecorder
             App = elegantRecorder;
             TopMost = App.TopMost;
 
-            Rec = new Recording(App, App.CurrentRecordingName);
-            Rec.Load();
+            if (App.CurrentRecordingName.Length > 0)
+            {
+                Rec = new Recording(App, App.CurrentRecordingName);
+                Rec.Load();
+            }
 
             textBoxDataFolder.Text = App.Options.DataFolder;
             checkBoxPromptOverwrite.Checked = App.Options.PromptOverwrite;
@@ -78,7 +82,11 @@ namespace ElegantRecorder
             App.Options.CurrRecName = textBoxCurrRecName.Text;
 
             App.Options.Save(App.ConfigFilePath);
-            Rec.Save(false);
+
+            if (Rec != null)
+            {
+                Rec.Save(false);
+            }
 
             App.ReadRecordingHeaders();
         }
@@ -89,6 +97,8 @@ namespace ElegantRecorder
             textBoxMouseMoveDelay.Enabled = checkBoxRecMouseMove.Checked;
             labelMinEventDelay.Enabled = checkBoxRecMouseMove.Checked;
             labelMs.Enabled = checkBoxRecMouseMove.Checked;
+
+            groupBoxCurrentRec.Enabled = Rec != null;
         }
 
         private void ChangeAutomationEngine()
@@ -118,9 +128,17 @@ namespace ElegantRecorder
         {
             var dialog = new FolderBrowserDialog();
 
+            var prevDataFolder = textBoxDataFolder.Text;
+
             if (dialog.ShowDialog() == DialogResult.OK)
             {
                 textBoxDataFolder.Text = dialog.SelectedPath;
+
+                if (textBoxDataFolder.Text != prevDataFolder)
+                {
+                    Rec = null;
+                    EnableControls();
+                }
             }
         }
 

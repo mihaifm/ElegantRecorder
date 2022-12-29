@@ -160,6 +160,7 @@ namespace ElegantRecorder
             dataGridViewRecordings.Sort(new RowComparer(this));
 
             dataGridViewRecordings.ClearSelection();
+            CurrentRecordingName = "";
 
             if (dataGridViewRecordings.Rows.Count > 0)
             { 
