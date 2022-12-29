@@ -160,8 +160,12 @@ namespace ElegantRecorder
             dataGridViewRecordings.Sort(new RowComparer(this));
 
             dataGridViewRecordings.ClearSelection();
-            dataGridViewRecordings.CurrentCell = dataGridViewRecordings.Rows[0].Cells[0];
-            dataGridViewRecordings.Rows[0].Selected = true;
+
+            if (dataGridViewRecordings.Rows.Count > 0)
+            { 
+                dataGridViewRecordings.CurrentCell = dataGridViewRecordings.Rows[0].Cells[0];
+                dataGridViewRecordings.Rows[0].Selected = true;
+            }
         }
 
         public State StateSwitch(State transition)
